@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoneMaker — 2D Skeletal Animator</title>
+<link rel="icon" href="data:,">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/photopea/UPNG.js@latest/UPNG.js"></script>
+<style>
+:root{
+  --bg:#0d0e10; --card:#161719; --card2:#1b1c1f; --border:#2c2d30; --text:#e8e8ea; --dim:#8a8d93;
+  --accent:#ffc933; --accent2:#4da6ff; --good:#3ddc84; --bad:#ff5f5f; --input:#1f2023; --hover:#28292d;
+  --radius:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-size:13px;}
+h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px;}
+h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin:0 0 8px;font-weight:700;}
+button{background:linear-gradient(180deg,#232427,#1a1b1e);border:1px solid #3a3b3f;color:var(--text);border-radius:var(--radius);padding:6px 11px;cursor:pointer;font-size:12px;transition:border-color .12s,transform .05s;}
+button:hover{background:var(--hover);border-color:#5a5c62;}
+button:active{transform:translateY(1px);}
+button.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+button.good{border-color:var(--good);color:var(--good);}
+button:disabled{opacity:.35;cursor:not-allowed;}
+input[type=text],input[type=number],select{background:var(--input);border:1px solid #37383c;color:#fff;border-radius:6px;padding:6px 7px;width:100%;font-size:12px;}
+input[type=text]:focus,input[type=number]:focus,select:focus{outline:none;border-color:var(--accent2);}
+input[type=range]{accent-color:var(--accent);}
+label.field{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:9px;}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;background:var(--card);border-bottom:1px solid var(--border);}
+header .grp{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);}
+header .grp:first-of-type{border-left:none;}
+header input[type=number]{width:52px;}
+.help{padding:6px 14px;font-size:11px;color:var(--dim);background:#111214;border-bottom:1px solid var(--border);line-height:1.6;}
+kbd{background:#26272b;border:1px solid #3a3b3f;border-radius:3px;padding:0 5px;font-size:10px;color:var(--text);font-family:inherit;}
+.app{display:flex;height:calc(100vh - 300px);min-height:420px;}
+aside{width:252px;flex-shrink:0;overflow-y:auto;padding:12px;background:var(--card);border-right:1px solid var(--border);}
+aside.right{border-right:none;border-left:1px solid var(--border);}
+main.stage{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#0c0d0f,#050506);overflow:auto;padding:10px;}
+#stage{background:#000;box-shadow:0 0 0 1px #2c2d30,0 10px 40px rgba(0,0,0,.6);max-width:100%;max-height:100%;cursor:crosshair;border-radius:4px;}
+.section{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.row-item{display:flex;align-items:center;gap:5px;padding:6px 7px;border:1px solid #2a2b2e;border-radius:var(--radius);margin-bottom:4px;background:var(--card2);cursor:pointer;transition:background .12s,border-color .12s;}
+.row-item:hover{background:var(--hover);}
+.row-item.active{border-color:var(--accent);background:#2c2610;}
+.row-item.paint{border-color:var(--accent2);background:#122534;box-shadow:0 0 0 1px var(--accent2) inset;}
+.row-item span.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.row-item button{padding:2px 6px;font-size:11px;}
+.bone-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.5);}
+.hint{color:var(--dim);font-size:12px;line-height:1.55;}
+.tex-thumb{width:36px;height:36px;object-fit:contain;background:#fff;border-radius:5px;border:2px solid #333;cursor:pointer;transition:border-color .12s;}
+.tex-thumb:hover{border-color:var(--accent2);}
+.tex-row{display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #2a2b2e;border-radius:var(--radius);margin-bottom:4px;background:var(--card2);}
+.tex-row.def .tex-thumb{border-color:var(--accent);}
+.tex-row.cur{box-shadow:0 0 0 1px var(--accent2) inset;}
+.tex-row button{padding:2px 5px;font-size:10px;}
+.wslider{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.wslider input[type=range]{flex:1;}
+.wslider .wv{width:34px;text-align:right;font-size:11px;color:var(--dim);}
+.brushbar{display:flex;flex-direction:column;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:10px;}
+.brushbar .row{display:flex;align-items:center;gap:6px;}
+.brushbar .row span:first-child{width:56px;font-size:10px;color:var(--dim);text-transform:uppercase;}
+.brushbar .row input[type=range]{flex:1;}
+.brushbar .wv{width:32px;text-align:right;font-size:11px;color:var(--dim);}
+.legend{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.legend .chip{display:flex;align-items:center;gap:4px;background:var(--card2);border:1px solid #2a2b2e;border-radius:12px;padding:2px 8px 2px 5px;font-size:10px;cursor:pointer;}
+.legend .chip.on{border-color:var(--accent2);box-shadow:0 0 0 1px var(--accent2) inset;}
+.gridmini{display:grid;gap:2px;background:#000;padding:6px;border-radius:6px;border:1px solid var(--border);margin-bottom:10px;width:max-content;max-width:100%;}
+.gridmini .cell{width:15px;height:15px;border-radius:2px;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
+.gridmini .cell.sel{box-shadow:0 0 0 2px #fff;}
+.timeline{background:#111214;border-top:1px solid var(--border);padding:10px 14px;overflow-x:auto;}
+.tl-toolbar{display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap;}
+#timelineBody{position:relative;min-width:600px;}
+.tl-row{display:flex;align-items:center;height:24px;margin-bottom:2px;}
+.tl-label{width:150px;flex-shrink:0;font-size:11px;padding-right:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--dim);}
+.tl-label.sel{color:var(--accent);font-weight:700;}
+.tl-track{position:relative;height:18px;background:#1a1b1e;border-radius:4px;cursor:pointer;}
+.tl-track.ruler{background:transparent;height:16px;cursor:default;}
+.tl-track.ruler span{position:absolute;top:0;font-size:9px;color:var(--dim);transform:translateX(-50%);}
+.tl-key{position:absolute;top:3px;width:11px;height:11px;background:var(--accent);border-radius:2px;transform:translateX(-50%) rotate(45deg);border:1px solid #000;cursor:grab;}
+.tl-key:hover{filter:brightness(1.3);}
+.tl-key.tl-key-ghost{cursor:grabbing;box-shadow:0 0 0 2px #fff;pointer-events:none;z-index:6;}
+.tl-key.tex{background:var(--accent2);}
+.tl-playhead{position:absolute;top:0;bottom:0;width:2px;background:#ff4040;pointer-events:none;z-index:5;box-shadow:0 0 6px #ff4040;}
+footer{display:flex;align-items:center;gap:16px;padding:14px;background:var(--card);border-top:1px solid var(--border);flex-wrap:wrap;}
+#resultImg{max-height:80px;background:#fff;border-radius:4px;display:none;}
+.toast{position:fixed;bottom:16px;right:16px;background:#222327;border:1px solid #444;padding:10px 16px;border-radius:8px;z-index:99;font-size:12px;box-shadow:0 6px 20px rgba(0,0,0,.4);}
+.toast.err{border-color:var(--bad);color:#ffb3b3;}
+hr{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.checker{position:relative;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🦴 BoneMaker</h1>
+  <div class="grp">
+    <button id="modeSetup" class="active" title="Настройка скелета в покое">Setup</button>
+    <button id="modeAnimate" title="Создание анимации по кадрам">Animate</button>
+    <button id="modeWeight" title="Настройка весов сетки на кости">Weights</button>
+  </div>
+  <div class="grp">
+    <button id="prevKeyBtn" title="Предыдущий ключ">⏮</button>
+    <button id="prevFrameBtn" title="Предыдущий кадр (←)">◀</button>
+    <button id="playBtn" title="Пробел">▶ Play</button>
+    <button id="nextFrameBtn" title="Следующий кадр (→)">▶</button>
+    <button id="nextKeyBtn" title="Следующий ключ">⏭</button>
+    <label class="field" style="margin:0;">FPS<input type="number" id="fpsInput" value="24" min="1" max="60"></label>
+    <label class="field" style="margin:0;">Кадров<input type="number" id="framesInput" value="60" min="2" max="600"></label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim);"><input type="checkbox" id="loopChk" checked>loop</label>
+  </div>
+  <div class="grp">
+    <button id="keyAllBtn" title="Поставить ключ для всех костей на текущем кадре (K)">🔑 Ключ всех</button>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim);"><input type="checkbox" id="namesChk">имена костей</label>
+  </div>
+  <div class="grp">
+    <label class="field" style="margin:0;">W<input type="number" id="cwInput" value="640"></label>
+    <label class="field" style="margin:0;">H<input type="number" id="chInput" value="480"></label>
+    <button id="applySizeBtn">Resize</button>
+  </div>
+  <div class="grp">
+    <button id="saveBtn">💾 Проект</button>
+    <button id="loadBtnLbl">📂 Открыть</button>
+    <input type="file" id="loadInput" accept=".json" style="display:none;">
+  </div>
+  <div class="grp">
+    <button id="exportBtn" style="background:var(--accent);color:#000;font-weight:600;">⬇ Экспорт APNG</button>
+  </div>
+</header>
+<div class="help" id="helpBar"></div>
+
+<div class="app">
+  <aside class="left">
+    <div class="section">
+      <h3>Кости</h3>
+      <button id="addBoneBtn" style="width:100%;margin-bottom:8px;">+ Кость</button>
+      <div id="bonesList"></div>
+    </div>
+    <div class="section">
+      <h3>Слои</h3>
+      <button id="addLayerBtnLbl" style="width:100%;margin-bottom:8px;">+ Слой (изображение)</button>
+      <input type="file" id="addLayerInput" accept="image/*" style="display:none;">
+      <div id="layersList"></div>
+    </div>
+  </aside>
+
+  <main class="stage checker">
+    <canvas id="stage" width="640" height="480"></canvas>
+  </main>
+
+  <aside class="right" id="propsPanel">
+    <h3>Свойства</h3>
+    <div id="propsBody"><p class="hint">Выберите кость или слой слева, либо на холсте.</p></div>
+  </aside>
+</div>
+
+<div class="timeline">
+  <div class="tl-toolbar">
+    <h3 style="margin:0;">Таймлайн</h3>
+    <button id="addKeyBtn">+ Ключ</button>
+    <button id="delKeyBtn">✕ Удалить ключ</button>
+    <span class="hint" id="frameLabel">кадр: 0</span>
+  </div>
+  <div id="timelineBody"></div>
+</div>
+
+<footer>
+  <img id="resultImg">
+  <div>
+    <a id="dlLink" href="#" download="animation.png" style="color:var(--accent);display:none;">Скачать APNG ⬇</a>
+    <div class="hint" id="resultInfo"></div>
+  </div>
+</footer>
+
+<script>
+'use strict';
+/* ===================== СОСТОЯНИЕ ===================== */
+let bones = [];            // {id,name,parentId,rotation,length,x,y}
+let boneTracks = {};       // id -> [{frame,rotation,x,y}] sorted by frame
+let layers = [];           // {id,name,parentBoneId,x,y,w,h,textures:[{img,name,dataURL}],defaultTex,texTrack,meshCols,meshRows,mesh:{cols,rows,verts},weights:[{boneId:w}],visible}
+let mode = 'setup';        // setup | animate | weight
+let selectedBoneId = null, selectedLayerId = null, selectedVertexIndex = null;
+let playhead = 0, isPlaying = false, playRAF = null;
+let fps = 24, totalFrames = 60, loop = true;
+let canvasW = 640, canvasH = 480;
+let nextId = 1;
+let drag = null;
+let keyDrag = null;        // перетаскивание/копирование ключа на таймлайне: {r,k,dia,ghost,track,startX,origFrame,curFrame,isCopy,moved}
+let suppressTrackClick = false; // гасит клик-сик после завершения перетаскивания ключа
+let activeWeightBoneId = null;   // кисть весов красит эту кость в режиме Weights
+let hoverBoneId = null;          // подсветка кости под курсором
+let showBoneNames = false;
+let brushRadius = 45, brushStrength = 0.35;
+const LABEL_W = 150, PX_PER_FRAME = 14;
+
+const stage = document.getElementById('stage');
+const ctx = stage.getContext('2d');
+
+/* ===================== ХЕЛПЕРЫ ===================== */
+function uid(p){ return p + (nextId++); }
+function boneById(id){ return bones.find(b => b.id === id); }
+function layerById(id){ return layers.find(l => l.id === id); }
+function dist(x1,y1,x2,y2){ return Math.hypot(x1-x2, y1-y2); }
+function deg(r){ return r*180/Math.PI; }
+function rad(d){ return d*Math.PI/180; }
+function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Стабильный "приятный" цвет для кости, чтобы визуально отличать кости друг от друга.
+function boneColor(id){
+  let h=0; const s=String(id); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  const hue = h%360;
+  return `hsl(${hue} 75% 62%)`;
+}
+// Тепловая заливка веса (0 -> синий, 1 -> красный) для наглядного веса-пэйнта.
+function heatColor(w){
+  w = clamp(w,0,1);
+  const r = Math.round(40 + 200*w), g = Math.round(90 + 40*(1-Math.abs(w-.5)*2)), b = Math.round(230 - 190*w);
+  return `rgb(${r},${g},${b})`;
+}
+// Кратчайшее расстояние от точки до отрезка (для авто-весов по ближайшей кости).
+function pointSegDist(px,py,x1,y1,x2,y2){
+  const dx=x2-x1, dy=y2-y1; const len2=dx*dx+dy*dy;
+  let t = len2>1e-9 ? ((px-x1)*dx+(py-y1)*dy)/len2 : 0;
+  t = clamp(t,0,1);
+  return dist(px,py, x1+dx*t, y1+dy*t);
+}
+// Считает плотный bbox непрозрачных пикселей изображения (в координатах самой картинки).
+function computeAlphaBBox(img, threshold){
+  threshold = threshold||10;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const c = document.createElement('canvas'); c.width=w; c.height=h;
+  const cx = c.getContext('2d', {willReadFrequently:true});
+  cx.clearRect(0,0,w,h); cx.drawImage(img,0,0);
+  let data;
+  try{ data = cx.getImageData(0,0,w,h).data; }catch(err){ return {x:0,y:0,w,h}; }
+  let minX=w, minY=h, maxX=-1, maxY=-1;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const a = data[(y*w+x)*4+3];
+      if(a>threshold){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+    }
+  }
+  if(maxX<0) return {x:0,y:0,w,h}; // полностью прозрачно/не удалось прочитать — берём весь кадр
+  const pad = 2;
+  minX=Math.max(0,minX-pad); minY=Math.max(0,minY-pad);
+  maxX=Math.min(w-1,maxX+pad); maxY=Math.min(h-1,maxY+pad);
+  return { x:minX, y:minY, w:(maxX-minX+1), h:(maxY-minY+1) };
+}
+
+function getCanvasPos(e){
+  const r = stage.getBoundingClientRect();
+  const sx = stage.width/r.width, sy = stage.height/r.height;
+  return { x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy };
+}
+
+function isDescendant(candidateId, ofId){
+  let cur = boneById(candidateId);
+  while(cur){ if(cur.id === ofId) return true; cur = cur.parentId ? boneById(cur.parentId) : null; }
+  return false;
+}
+
+/* ===================== КОСТИ / ПОЗЫ ===================== */
+// frame === null  ->  базовая (setup) поза; иначе интерполированная поза кадра
+function getBonePose(bone, frame){
+  const track = boneTracks[bone.id] || [];
+  if(track.length === 0) return { rotation:bone.rotation, x:bone.x, y:bone.y };
+  if(frame <= track[0].frame) return { rotation:track[0].rotation, x:track[0].x, y:track[0].y };
+  const last = track[track.length-1];
+  if(frame >= last.frame) return { rotation:last.rotation, x:last.x, y:last.y };
+  for(let i=0;i<track.length-1;i++){
+    const a=track[i], b=track[i+1];
+    if(frame>=a.frame && frame<=b.frame){
+      const t = (frame-a.frame)/((b.frame-a.frame)||1);
+      let dr = b.rotation - a.rotation;
+      while(dr>Math.PI) dr-=Math.PI*2;
+      while(dr<-Math.PI) dr+=Math.PI*2;
+      return { rotation:a.rotation+dr*t, x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t };
+    }
+  }
+  return { rotation:bone.rotation, x:bone.x, y:bone.y };
+}
+
+// Возвращает {ox,oy,angle} мировой трансформ начала кости. frame=null -> setup поза.
+function poseTransform(bone, frame, memo){
+  if(memo.has(bone.id)) return memo.get(bone.id);
+  let rotation, x, y;
+  if(frame === null){ rotation=bone.rotation; x=bone.x; y=bone.y; }
+  else { const p = getBonePose(bone, frame); rotation=p.rotation; x=p.x; y=p.y; }
+  let result;
+  if(!bone.parentId){
+    result = { ox:x, oy:y, angle:rotation };
+  } else {
+    const parent = boneById(bone.parentId);
+    if(!parent){ result = { ox:x, oy:y, angle:rotation }; }
+    else{
+      const pT = poseTransform(parent, frame, memo);
+      const tipX = pT.ox + parent.length*Math.cos(pT.angle);
+      const tipY = pT.oy + parent.length*Math.sin(pT.angle);
+      result = { ox:tipX, oy:tipY, angle: pT.angle + rotation };
+    }
+  }
+  memo.set(bone.id, result);
+  return result;
+}
+function boneTip(bone, frame, memo){
+  const T = poseTransform(bone, frame, memo);
+  return { x:T.ox+bone.length*Math.cos(T.angle), y:T.oy+bone.length*Math.sin(T.angle) };
+}
+function worldToLocal(T, px, py){
+  const dx=px-T.ox, dy=py-T.oy, c=Math.cos(-T.angle), s=Math.sin(-T.angle);
+  return { x: dx*c-dy*s, y: dx*s+dy*c };
+}
+function localToWorld(T, lx, ly){
+  const c=Math.cos(T.angle), s=Math.sin(T.angle);
+  return { x: T.ox + lx*c - ly*s, y: T.oy + lx*s + ly*c };
+}
+
+function upsertKeyframe(boneId, frame, patch){
+  let track = boneTracks[boneId];
+  if(!track) track = boneTracks[boneId] = [];
+  let kf = track.find(k => k.frame === frame);
+  if(!kf){
+    const base = getBonePose(boneById(boneId), frame);
+    kf = { frame, rotation:base.rotation, x:base.x, y:base.y };
+    track.push(kf);
+    track.sort((a,b)=>a.frame-b.frame);
+  }
+  Object.assign(kf, patch);
+}
+
+function addBone(){
+  const parent = selectedBoneId;
+  const id = uid('b');
+  const bone = parent
+    ? { id, name:'Кость '+id, parentId:parent, rotation:0, length:80, x:0, y:0 }
+    : { id, name:'Кость '+id, parentId:null, rotation:0, length:80, x:canvasW/2, y:canvasH/2 };
+  bones.push(bone);
+  boneTracks[id] = [];
+  selectBone(id);
+  renderAll();
+}
+function deleteBone(id){
+  const toDel = new Set([id]);
+  let changed = true;
+  while(changed){
+    changed = false;
+    for(const b of bones){ if(toDel.has(b.parentId) && !toDel.has(b.id)){ toDel.add(b.id); changed=true; } }
+  }
+  bones = bones.filter(b=>!toDel.has(b.id));
+  toDel.forEach(bid => delete boneTracks[bid]);
+  layers.forEach(l=>{
+    l.weights.forEach(w => toDel.forEach(bid => delete w[bid]));
+    if(toDel.has(l.parentBoneId)) l.parentBoneId = null;
+  });
+  if(toDel.has(selectedBoneId)) selectedBoneId = null;
+  if(toDel.has(activeWeightBoneId)) activeWeightBoneId = null;
+  renderAll();
+}
+function reparentBone(bone, newParentId){
+  if(newParentId && (newParentId === bone.id || isDescendant(newParentId, bone.id))){
+    alert('Нельзя назначить потомка родителем (цикл).'); return;
+  }
+  bone.parentId = newParentId || null;
+  if(!bone.parentId){ bone.x = canvasW/2; bone.y = canvasH/2; bone.rotation = 0; }
+  else { bone.x = 0; bone.y = 0; bone.rotation = 0; }
+  renderAll();
+}
+
+/* ===================== СЛОИ / СЕТКА / ВЕСА ===================== */
+// Простая прямоугольная сетка cols×rows внутри cb — запасной вариант, когда авто-контур
+// выключен или не смог построиться (например, текстура полностью прозрачна).
+function buildGridMesh(layer, cb){
+  const cols = layer.meshCols, rows = layer.meshRows;
+  const verts = [];
+  for(let j=0;j<=rows;j++) for(let i=0;i<=cols;i++)
+    verts.push({ x: layer.x + cb.x + cb.w*i/cols, y: layer.y + cb.y + cb.h*j/rows });
+  const tris = [];
+  for(let j=0;j<rows;j++) for(let i=0;i<cols;i++){
+    const i00=j*(cols+1)+i, i10=i00+1, i01=i00+(cols+1), i11=i01+1;
+    tris.push([i00,i10,i01], [i10,i11,i01]);
+  }
+  layer.mesh = { cols, rows, verts, tris };
+  layer.weights = verts.map(()=> layer.parentBoneId ? { [layer.parentBoneId]: 1 } : {});
+}
+// Органичная сетка по силуэту прозрачности картинки (как автогенерация меша в Spine):
+// точки расставляются по контуру фигуры и внутри неё, а не квадратом bbox.
+function buildContourMesh(layer, tex){
+  const density = layer.meshCols || 4; // тот же слайдер "Плотность", что и у прямоугольной сетки
+  const gen = computeContourMeshForImage(tex.img, density);
+  if(!gen) return false;
+  const verts = gen.imgPts.map(p=> ({ x: layer.x + p.x, y: layer.y + p.y }));
+  layer.mesh = { cols:null, rows:null, verts, tris: gen.triangles };
+  layer.weights = verts.map(()=> layer.parentBoneId ? { [layer.parentBoneId]: 1 } : {});
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  gen.imgPts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; });
+  layer.contentBox = { x:minX, y:minY, w:Math.max(1,maxX-minX), h:Math.max(1,maxY-minY) };
+  return true;
+}
+// Пересчитывает сетку слоя: авто-контур по альфа-каналу (если включено), с откатом на
+// простую прямоугольную сетку, если контур построить не удалось.
+function rebuildMesh(layer){
+  const tex = layer.textures[layer.defaultTex||0] || layer.textures[0];
+  const wantContour = layer.autoFit!==false && tex && tex.img;
+  if(wantContour && buildContourMesh(layer, tex)) return;
+  const cb = (layer.autoFit!==false && tex && tex.img) ? computeAlphaBBox(tex.img) : {x:0,y:0,w:layer.w,h:layer.h};
+  layer.contentBox = cb;
+  buildGridMesh(layer, cb);
+  if(wantContour) showToast('Не удалось построить контур — использована прямоугольная сетка', true);
+}
+
+/* ===================== АВТО-КОНТУР (сетка по силуэту, как в Spine) ===================== */
+function lerp(a,b,t){ return a+(b-a)*t; }
+// Бинарная маска прозрачности картинки в уменьшенном рабочем разрешении — даунскейл
+// сглаживает пиксельные зазубрины растра и работает быстро даже для больших текстур.
+function computeAlphaMask(img, maxDim){
+  const nw = img.naturalWidth, nh = img.naturalHeight;
+  const scale = Math.min(1, maxDim/Math.max(nw,nh));
+  const mw = Math.max(8, Math.round(nw*scale)), mh = Math.max(8, Math.round(nh*scale));
+  const c = document.createElement('canvas'); c.width=mw; c.height=mh;
+  const cx = c.getContext('2d', {willReadFrequently:true});
+  cx.clearRect(0,0,mw,mh);
+  cx.imageSmoothingEnabled = true;
+  cx.drawImage(img, 0,0, mw, mh);
+  let data;
+  try{ data = cx.getImageData(0,0,mw,mh).data; }catch(err){ return null; }
+  const mask = new Uint8Array(mw*mh);
+  let any=false;
+  for(let i=0;i<mw*mh;i++){ if(data[i*4+3] > 16){ mask[i]=1; any=true; } }
+  if(!any) return null;
+  return { mask, w:mw, h:mh, sx:nw/mw, sy:nh/mh };
+}
+// Обходит границу непрозрачных пикселей маски и возвращает замкнутые контуры (внешние
+// силуэты + дырки) как полилинии из целочисленных координат углов сетки маски. Каждое
+// граничное ребро направлено так, что заполненный пиксель лежит с фиксированной стороны —
+// благодаря этому рёбра однозначно сцепляются в замкнутые петли простым поиском по карте.
+function traceAlphaBoundaries(mask, w, h){
+  const isFilled = (i,j)=> i>=0 && j>=0 && i<w && j<h && mask[j*w+i]===1;
+  const fromMap = new Map();
+  const addEdge = (x1,y1,x2,y2)=> fromMap.set(x1+','+y1, {x:x2,y:y2});
+  for(let j=0;j<h;j++) for(let i=0;i<w;i++){
+    if(!isFilled(i,j)) continue;
+    if(!isFilled(i,j-1)) addEdge(i+1,j, i,j);
+    if(!isFilled(i,j+1)) addEdge(i,j+1, i+1,j+1);
+    if(!isFilled(i-1,j)) addEdge(i,j, i,j+1);
+    if(!isFilled(i+1,j)) addEdge(i+1,j+1, i+1,j);
+  }
+  const loops = []; const used = new Set();
+  for(const startKey of fromMap.keys()){
+    if(used.has(startKey)) continue;
+    const loop = []; let curKey = startKey, guard=0;
+    while(true){
+      if(used.has(curKey)) break;
+      used.add(curKey);
+      const [cx,cy] = curKey.split(',').map(Number);
+      loop.push({x:cx,y:cy});
+      const nxt = fromMap.get(curKey);
+      if(!nxt) break;
+      const nxtKey = nxt.x+','+nxt.y;
+      if(nxtKey === startKey) break;
+      curKey = nxtKey;
+      if(++guard > w*h*4+10) break; // защита от бесконечного цикла на повреждённых данных
+    }
+    if(loop.length>=3) loops.push(loop);
+  }
+  return loops;
+}
+function polygonAreaAbs(pts){
+  let a=0;
+  for(let i=0;i<pts.length;i++){ const p1=pts[i], p2=pts[(i+1)%pts.length]; a += p1.x*p2.y - p2.x*p1.y; }
+  return Math.abs(a)/2;
+}
+// Упрощение Дугласа-Пекера для ЗАМКНУТОЙ полилинии — режем её на две открытые дуги по
+// самой удалённой от старта точке, упрощаем каждую по отдельности и склеиваем обратно.
+function simplifyClosedPolygon(pts, tol){
+  if(pts.length<=3) return pts.slice();
+  function perpDist(p,a,b){
+    const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+    if(len2<1e-12) return dist(p.x,p.y,a.x,a.y);
+    let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2; t=clamp(t,0,1);
+    return dist(p.x,p.y, a.x+t*dx, a.y+t*dy);
+  }
+  function dp(list){
+    if(list.length<3) return list.slice();
+    let maxD=-1, idx=-1;
+    const a=list[0], b=list[list.length-1];
+    for(let i=1;i<list.length-1;i++){ const d=perpDist(list[i],a,b); if(d>maxD){maxD=d;idx=i;} }
+    if(maxD<=tol) return [a,b];
+    const left=dp(list.slice(0,idx+1)), right=dp(list.slice(idx));
+    return left.slice(0,-1).concat(right);
+  }
+  let farI=1, farD=-1;
+  for(let i=1;i<pts.length;i++){ const d=dist(pts[i].x,pts[i].y,pts[0].x,pts[0].y); if(d>farD){farD=d;farI=i;} }
+  const s1 = dp(pts.slice(0,farI+1));
+  const s2 = dp(pts.slice(farI).concat([pts[0]]));
+  const result = s1.slice(0,-1).concat(s2.slice(0,-1));
+  return result.length>=3 ? result : pts.slice();
+}
+// Чётно-нечётный тест "точка внутри фигуры" сразу по всем контурам — дырки и отдельные
+// несвязные острова обрабатываются сами собой, без явного различения "внешний/дырка".
+function pointInLoops(x,y,loops){
+  let inside=false;
+  for(const loop of loops){
+    const n=loop.length;
+    for(let i=0,j=n-1;i<n;j=i++){
+      const xi=loop[i].x, yi=loop[i].y, xj=loop[j].x, yj=loop[j].y;
+      if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+  }
+  return inside;
+}
+// Триангуляция Делоне (Bowyer-Watson). Обычный O(n²) вариант — для наших размеров сетки
+// (сотни точек) отрабатывает за единицы-десятки миллисекунд.
+function delaunayTriangulate(points){
+  const n=points.length; if(n<3) return [];
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const p of points){ if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; }
+  const dx=maxX-minX||1, dy=maxY-minY||1, dmax=Math.max(dx,dy);
+  const midx=(minX+maxX)/2, midy=(minY+maxY)/2;
+  const pts = points.slice();
+  const superStart = pts.length;
+  pts.push({x:midx-20*dmax,y:midy-dmax},{x:midx,y:midy+20*dmax},{x:midx+20*dmax,y:midy-dmax});
+  let tris = [[superStart,superStart+1,superStart+2]];
+  function circumcircle(a,b,c){
+    const ax=a.x,ay=a.y,bx=b.x,by=b.y,cx=c.x,cy=c.y;
+    const d=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));
+    if(Math.abs(d)<1e-10) return null;
+    const ux=((ax*ax+ay*ay)*(by-cy)+(bx*bx+by*by)*(cy-ay)+(cx*cx+cy*cy)*(ay-by))/d;
+    const uy=((ax*ax+ay*ay)*(cx-bx)+(bx*bx+by*by)*(ax-cx)+(cx*cx+cy*cy)*(bx-ax))/d;
+    const r2=(ax-ux)*(ax-ux)+(ay-uy)*(ay-uy);
+    return {x:ux,y:uy,r2};
+  }
+  for(let pi=0; pi<pts.length-3; pi++){
+    const p = pts[pi];
+    const bad = [];
+    for(const t of tris){
+      const cc = circumcircle(pts[t[0]],pts[t[1]],pts[t[2]]);
+      if(!cc) continue;
+      const dx2=p.x-cc.x, dy2=p.y-cc.y;
+      if(dx2*dx2+dy2*dy2 <= cc.r2*(1+1e-9)) bad.push(t);
+    }
+    const edgeCount = new Map();
+    const edgeKey = (a,b)=> a<b ? a+'_'+b : b+'_'+a;
+    for(const t of bad){
+      for(const [a,b] of [[t[0],t[1]],[t[1],t[2]],[t[2],t[0]]]){
+        const k=edgeKey(a,b); edgeCount.set(k, (edgeCount.get(k)||0)+1);
+      }
+    }
+    const boundary = [];
+    for(const t of bad){
+      for(const [a,b] of [[t[0],t[1]],[t[1],t[2]],[t[2],t[0]]]){
+        if(edgeCount.get(edgeKey(a,b))===1) boundary.push([a,b]);
+      }
+    }
+    const badSet = new Set(bad);
+    tris = tris.filter(t=>!badSet.has(t));
+    for(const [a,b] of boundary) tris.push([a,b,pi]);
+  }
+  return tris.filter(t=> t[0]<superStart && t[1]<superStart && t[2]<superStart);
+}
+// Собирает точки контура (+дырки) и внутренние точки, триангулирует и отбрасывает
+// треугольники вне фигуры проверкой центроида — так же отсекаются "мостики" между
+// несвязными островами и внутренности дырок, без построения полноценной CDT.
+function generateContourMesh(mask, w, h, spacing, tol){
+  const rawLoops = traceAlphaBoundaries(mask, w, h);
+  const loops = rawLoops.filter(l=> polygonAreaAbs(l) >= 2).map(l=> simplifyClosedPolygon(l, tol));
+  if(loops.length===0) return null;
+  const contourPts = [];
+  for(const loop of loops) for(const p of loop) contourPts.push(p);
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const p of contourPts){ if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; }
+  const interior = [];
+  const minDist = spacing*0.5;
+  for(let y=minY+spacing/2; y<maxY; y+=spacing){
+    for(let x=minX+spacing/2; x<maxX; x+=spacing){
+      if(!pointInLoops(x,y,loops)) continue;
+      let tooClose=false;
+      for(const p of contourPts){ if(dist(p.x,p.y,x,y) < minDist){ tooClose=true; break; } }
+      if(!tooClose) interior.push({x,y});
+    }
+  }
+  const allPts = contourPts.concat(interior);
+  const tris = delaunayTriangulate(allPts).filter(t=>{
+    const a=allPts[t[0]], b=allPts[t[1]], c=allPts[t[2]];
+    return pointInLoops((a.x+b.x+c.x)/3, (a.y+b.y+c.y)/3, loops);
+  });
+  if(tris.length===0) return null;
+  return { points: allPts, triangles: tris };
+}
+// Склеивает всё вместе для текстуры слоя: маска -> контур -> облако точек -> сетка.
+// Плотность точек берётся из того же слайдера "Плотность" (1..12), что и у прямоугольной сетки.
+function computeContourMeshForImage(img, density){
+  const am = computeAlphaMask(img, 200);
+  if(!am) return null;
+  const t = clamp((density-1)/11, 0, 1);
+  const spacing = lerp(28, 6, t);
+  const tol = lerp(3.0, 0.8, t);
+  const gen = generateContourMesh(am.mask, am.w, am.h, spacing, tol);
+  if(!gen) return null;
+  const imgPts = gen.points.map(p=>({ x:p.x*am.sx, y:p.y*am.sy }));
+  return { imgPts, triangles: gen.triangles };
+}
+// Автоматически назначает каждой вершине сетки вес 1.0 ближайшей кости (по bind-позе).
+function autoWeightLayer(layer){
+  if(bones.length===0){ showToast('Сначала создайте кости', true); return; }
+  const memo = new Map();
+  const segs = bones.map(b=>{ const T=poseTransform(b,null,memo); const tip=boneTip(b,null,memo); return {id:b.id, x1:T.ox,y1:T.oy,x2:tip.x,y2:tip.y}; });
+  layer.mesh.verts.forEach((v,i)=>{
+    let bestId=segs[0].id, bestD=Infinity;
+    segs.forEach(s=>{ const d=pointSegDist(v.x,v.y,s.x1,s.y1,s.x2,s.y2); if(d<bestD){ bestD=d; bestId=s.id; } });
+    layer.weights[i] = { [bestId]: 1 };
+  });
+  redraw(); renderProps();
+  showToast('Авто-веса назначены по ближайшей кости');
+}
+function rebindLayerRigid(layer, boneId){
+  layer.parentBoneId = boneId || null;
+  layer.weights = layer.weights.map(()=> boneId ? { [boneId]: 1 } : {});
+  redraw(); renderProps();
+}
+function setWeight(layer, vIndex, boneId, value){
+  const w = layer.weights[vIndex];
+  if(value <= 0) delete w[boneId]; else w[boneId] = value;
+  const sum = Object.values(w).reduce((a,b)=>a+b,0);
+  if(sum > 0) for(const k in w) w[k] = w[k]/sum;
+  redraw(); renderProps();
+}
+function deformVertex(layer, i, frame, bindMemo, curMemo){
+  const v = layer.mesh.verts[i], w = layer.weights[i] || {};
+  let sx=0, sy=0, tw=0;
+  for(const bId in w){
+    const weight = w[bId]; if(!weight) continue;
+    const bone = boneById(bId); if(!bone) continue;
+    const bindT = poseTransform(bone, null, bindMemo);
+    const loc = worldToLocal(bindT, v.x, v.y);
+    const curT = poseTransform(bone, frame, curMemo);
+    const wp = localToWorld(curT, loc.x, loc.y);
+    sx += wp.x*weight; sy += wp.y*weight; tw += weight;
+  }
+  if(tw <= 1e-6) return { x:v.x, y:v.y };
+  return { x:sx/tw, y:sy/tw };
+}
+
+function getActiveTexIndex(layer, frame){
+  if(frame === null) return layer.defaultTex||0;
+  const track = layer.texTrack || [];
+  let chosen = layer.defaultTex||0;
+  for(const k of track){ if(k.frame<=frame) chosen=k.tex; else break; }
+  return chosen;
+}
+function getActiveTexture(layer, frame){
+  return layer.textures[getActiveTexIndex(layer,frame)] || layer.textures[0];
+}
+function upsertTexKey(layerId, frame, texIndex){
+  const layer = layerById(layerId);
+  if(!layer.texTrack) layer.texTrack = [];
+  let kf = layer.texTrack.find(k=>k.frame===frame);
+  if(!kf){ kf={frame,tex:texIndex}; layer.texTrack.push(kf); layer.texTrack.sort((a,b)=>a.frame-b.frame); }
+  else kf.tex = texIndex;
+}
+// Один клик по превью текстуры — сразу назначить её текущим кадром (в Animate — ключом на playhead,
+// в Setup — кадром по умолчанию). Это и есть "лёгкая настройка смены кадров".
+function useTexAsCurrent(layer, i){
+  if(mode==='animate'){ upsertTexKey(layer.id, playhead, i); renderTimeline(); showToast('Ключ текстуры добавлен на кадр '+playhead); }
+  else { layer.defaultTex = i; }
+  redraw(); renderProps();
+}
+function stepTexFrame(layer, dir){
+  const n = layer.textures.length; if(n===0) return;
+  const cur = getActiveTexIndex(layer, mode==='animate'?playhead:null);
+  useTexAsCurrent(layer, (cur+dir+n)%n);
+}
+function swapTexIndexRefs(layer, a, b){
+  const remap = idx => idx===a?b:(idx===b?a:idx);
+  if(layer.defaultTex===a) layer.defaultTex=b; else if(layer.defaultTex===b) layer.defaultTex=a;
+  (layer.texTrack||[]).forEach(k=>{ k.tex = remap(k.tex); });
+}
+
+/* ===================== РЕНДЕР (текстурные треугольники) ===================== */
+function computeAffine(src, dst){
+  const [x0,y0]=src[0], [x1,y1]=src[1], [x2,y2]=src[2];
+  const [X0,Y0]=dst[0], [X1,Y1]=dst[1], [X2,Y2]=dst[2];
+  const denom = (x1-x0)*(y2-y0) - (x2-x0)*(y1-y0);
+  if(Math.abs(denom) < 1e-8) return null;
+  const a=((X1-X0)*(y2-y0)-(X2-X0)*(y1-y0))/denom;
+  const b=((Y1-Y0)*(y2-y0)-(Y2-Y0)*(y1-y0))/denom;
+  const c=((X2-X0)*(x1-x0)-(X1-X0)*(x2-x0))/denom;
+  const d=((Y2-Y0)*(x1-x0)-(Y1-Y0)*(x2-x0))/denom;
+  const e=X0-a*x0-c*y0, f=Y0-b*x0-d*y0;
+  return [a,b,c,d,e,f];
+}
+// Раздвигаем контур клипа наружу вдоль НОРМАЛЕЙ РЁБЕР (а не от центроида), чтобы гарантировать
+// ровный нахлёст в margin px по всей длине КАЖДОГО ребра — включая середины длинных/острых
+// треугольников, где раздвижка "от центра" давала недостаточный отступ и оставляла швы.
+// Проекция текстуры считается по исходным (не раздвинутым) точкам, так что сама текстура
+// не искажается — просто соседние треугольники начинают перекрываться на margin px,
+// и антиалиасинг края одного треугольника всегда попадает "внутрь" соседнего.
+function expandTriangle(pts, margin){
+  const n = 3;
+  const edgeNormals = [];
+  for(let i=0;i<n;i++){
+    const p1 = pts[i], p2 = pts[(i+1)%n];
+    const dx = p2[0]-p1[0], dy = p2[1]-p1[1];
+    const len = Math.hypot(dx,dy) || 1;
+    let nx = -dy/len, ny = dx/len;
+    const p3 = pts[(i+2)%n];
+    const mx=(p1[0]+p2[0])/2, my=(p1[1]+p2[1])/2;
+    const toP3x = p3[0]-mx, toP3y = p3[1]-my;
+    if(nx*toP3x+ny*toP3y > 0){ nx=-nx; ny=-ny; } // хотим нормаль, смотрящую НАРУЖУ (прочь от p3)
+    edgeNormals.push([nx,ny]);
+  }
+  const newPts = [];
+  for(let i=0;i<n;i++){
+    const nA = edgeNormals[(i+n-1)%n]; // нормаль предыдущего ребра
+    const nB = edgeNormals[i];         // нормаль следующего ребра
+    let sx = nA[0]+nB[0], sy = nA[1]+nB[1];
+    const slen = Math.hypot(sx,sy);
+    if(slen < 1e-6){
+      newPts.push([pts[i][0]+nB[0]*margin, pts[i][1]+nB[1]*margin]);
+      continue;
+    }
+    sx/=slen; sy/=slen;
+    const cosHalf = clamp(sx*nB[0]+sy*nB[1], 0.35, 1); // clamp защищает от игл на очень острых углах
+    const scale = margin / cosHalf;
+    newPts.push([pts[i][0]+sx*scale, pts[i][1]+sy*scale]);
+  }
+  return newPts;
+}
+function drawTexturedTriangle(c, img, srcPts, dstPts){
+  const m = computeAffine(srcPts, dstPts);
+  if(!m) return;
+  const clipPts = expandTriangle(dstPts, 0.6); // минимальный нахлёст, гасящий антиалиасинг края клипа между соседними треугольниками, но не портящий картинку в местах сильного изгиба сетки
+  c.save();
+  c.beginPath();
+  c.moveTo(clipPts[0][0], clipPts[0][1]);
+  c.lineTo(clipPts[1][0], clipPts[1][1]);
+  c.lineTo(clipPts[2][0], clipPts[2][1]);
+  c.closePath();
+  c.clip();
+  c.transform(m[0],m[1],m[2],m[3],m[4],m[5]);
+  c.imageSmoothingEnabled = true;
+  c.drawImage(img,0,0);
+  c.restore();
+}
+function renderLayerAt(c, layer, frame, bindMemo, curMemo){
+  const tex = getActiveTexture(layer, frame);
+  if(!tex || !tex.img) return;
+  const img = tex.img, { verts, tris } = layer.mesh;
+  const deformed = verts.map((v,i)=> deformVertex(layer, i, frame, bindMemo, curMemo));
+  const uv = idx => {
+    const v = verts[idx];
+    return [ (v.x-layer.x)/layer.w*img.naturalWidth, (v.y-layer.y)/layer.h*img.naturalHeight ];
+  };
+  const dp = idx => [ deformed[idx].x, deformed[idx].y ];
+  for(const t of tris){
+    drawTexturedTriangle(c, img, [uv(t[0]),uv(t[1]),uv(t[2])], [dp(t[0]),dp(t[1]),dp(t[2])]);
+  }
+}
+function drawChecker(c,w,h){
+  const s=16;
+  for(let y=0;y<h;y+=s) for(let x=0;x<w;x+=s){
+    c.fillStyle = ((x/s+y/s)%2===0) ? '#242424' : '#1c1c1c';
+    c.fillRect(x,y,s,s);
+  }
+}
+// Кость рисуется сужающимся к кончику "ромбом" в духе Spine, а не голой линией —
+// так гораздо понятнее, где у кости "начало"/"направление" и легче попасть по ней мышью.
+function drawBoneShape(c, ox,oy,angle,length, color, opts){
+  opts = opts||{};
+  const halfW = clamp(length*0.14, 3.5, 13);
+  const ax = Math.cos(angle), ay = Math.sin(angle);
+  const nx = -ay, ny = ax;
+  const neckLen = Math.min(length*0.2, 16);
+  const nkX = ox+ax*neckLen, nkY = oy+ay*neckLen;
+  const tipX = ox+ax*length, tipY = oy+ay*length;
+  c.save();
+  c.globalAlpha = opts.alpha!==undefined ? opts.alpha : 1;
+  c.beginPath();
+  c.moveTo(ox,oy);
+  c.lineTo(nkX+nx*halfW, nkY+ny*halfW);
+  c.lineTo(tipX,tipY);
+  c.lineTo(nkX-nx*halfW, nkY-ny*halfW);
+  c.closePath();
+  c.fillStyle = color; c.fill();
+  c.lineWidth = opts.selected ? 2.2 : 1;
+  c.strokeStyle = opts.selected ? '#fff' : 'rgba(0,0,0,.55)';
+  if(opts.selected){ c.shadowColor = color; c.shadowBlur = 12; }
+  c.stroke();
+  c.restore();
+}
+function drawSkeleton(frame, weightMode){
+  const memo = new Map();
+  for(const bone of bones){
+    const T = poseTransform(bone, frame, memo);
+    const tip = boneTip(bone, frame, memo);
+    const isActive = weightMode ? (bone.id===activeWeightBoneId) : (bone.id===selectedBoneId);
+    const isHover = !weightMode && bone.id===hoverBoneId && !isActive;
+    let alpha = 1;
+    if(weightMode && activeWeightBoneId) alpha = isActive ? 1 : 0.22;
+    const color = isActive ? '#ffcc33' : boneColor(bone.id);
+    drawBoneShape(ctx, T.ox,T.oy,T.angle,bone.length, color, {alpha, selected:isActive||isHover});
+    ctx.globalAlpha = alpha;
+    ctx.beginPath(); ctx.arc(T.ox,T.oy, isActive?7:6, 0, Math.PI*2); ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(tip.x,tip.y, isActive?5.5:4.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    ctx.strokeStyle='#000'; ctx.stroke();
+    if(showBoneNames && !weightMode){
+      ctx.font='11px -apple-system,sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+      ctx.shadowColor='#000'; ctx.shadowBlur=4;
+      ctx.fillText(bone.name, (T.ox+tip.x)/2, (T.oy+tip.y)/2 - 10);
+      ctx.shadowBlur=0;
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+// Каркас треугольников сетки поверх картинки — как в Spine, чтобы было видно, как именно
+// автоконтур разложил точки по силуэту, а не просто "квадратом".
+function drawMeshWireframe(layer){
+  if(!layer || !layer.mesh || !layer.mesh.tris || !layer.mesh.tris.length) return;
+  const v = layer.mesh.verts;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  layer.mesh.tris.forEach(t=>{
+    ctx.moveTo(v[t[0]].x, v[t[0]].y);
+    ctx.lineTo(v[t[1]].x, v[t[1]].y);
+    ctx.lineTo(v[t[2]].x, v[t[2]].y);
+    ctx.closePath();
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+function drawMeshHandles(){
+  if(!selectedLayerId) return;
+  const layer = layerById(selectedLayerId);
+  layer.mesh.verts.forEach((v,i)=>{
+    const sel = i===selectedVertexIndex;
+    let fill;
+    if(activeWeightBoneId) fill = heatColor(layer.weights[i][activeWeightBoneId]||0);
+    else fill = sel ? '#ff5050' : '#33ff99';
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, sel?7:5, 0, Math.PI*2);
+    ctx.fillStyle = fill;
+    ctx.fill(); ctx.strokeStyle= sel ? '#fff' : '#000'; ctx.lineWidth=sel?2:1; ctx.stroke();
+  });
+}
+function drawLayerBox(layer){
+  ctx.save();
+  ctx.strokeStyle = '#33ff99'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+  ctx.strokeRect(layer.x, layer.y, layer.w, layer.h);
+  if(layer.contentBox){
+    ctx.strokeStyle='rgba(77,166,255,.8)'; ctx.setLineDash([3,3]);
+    ctx.strokeRect(layer.x+layer.contentBox.x, layer.y+layer.contentBox.y, layer.contentBox.w, layer.contentBox.h);
+  }
+  ctx.restore();
+}
+function redraw(){
+  ctx.clearRect(0,0,stage.width,stage.height);
+  drawChecker(ctx, stage.width, stage.height);
+  const frame = (mode==='setup' || mode==='weight') ? null : playhead;
+  const bindMemo = new Map(), curMemo = new Map();
+  for(const layer of layers){ if(layer.visible!==false) renderLayerAt(ctx, layer, frame, bindMemo, curMemo); }
+  drawSkeleton(frame, mode==='weight');
+  if(mode === 'weight'){
+    if(selectedLayerId) drawMeshWireframe(layerById(selectedLayerId));
+    drawMeshHandles();
+  }
+  if(mode === 'setup' && selectedLayerId) drawLayerBox(layerById(selectedLayerId));
+}
+
+/* ===================== ВЗАИМОДЕЙСТВИЕ С ХОЛСТОМ ===================== */
+// Красит вес активной кости для всех вершин слоя в радиусе кисти вокруг точки pos.
+function paintWeightAt(layer, pos){
+  layer.mesh.verts.forEach((v,i)=>{
+    const d = dist(pos.x,pos.y,v.x,v.y);
+    if(d>brushRadius) return;
+    const falloff = 1 - d/brushRadius;
+    const cur = layer.weights[i][activeWeightBoneId]||0;
+    setWeight(layer, i, activeWeightBoneId, clamp(cur + brushStrength*falloff, 0, 1));
+  });
+}
+stage.addEventListener('mousedown', e=>{
+  const pos = getCanvasPos(e);
+  if(mode === 'weight'){
+    if(!selectedLayerId) return;
+    const layer = layerById(selectedLayerId);
+    let best=-1, bestD=16;
+    layer.mesh.verts.forEach((v,i)=>{ const d=dist(pos.x,pos.y,v.x,v.y); if(d<bestD){bestD=d;best=i;} });
+    if(best>=0){ selectedVertexIndex=best; }
+    if(e.shiftKey && activeWeightBoneId){
+      drag = { type:'paint', layerId:layer.id };
+      paintWeightAt(layer, pos);
+    }
+    renderProps(); redraw();
+    return;
+  }
+  const frame = mode==='setup' ? null : playhead;
+  const memo = new Map();
+  for(const bone of bones){
+    const tip = boneTip(bone, frame, memo);
+    if(dist(pos.x,pos.y,tip.x,tip.y) < 11){ drag={type:'rotate',boneId:bone.id}; selectBone(bone.id); return; }
+  }
+  for(const bone of bones){
+    if(bone.parentId) continue;
+    const T = poseTransform(bone, frame, memo);
+    if(dist(pos.x,pos.y,T.ox,T.oy) < 11){ drag={type:'translate',boneId:bone.id}; selectBone(bone.id); return; }
+  }
+  if(mode==='setup' && selectedLayerId){
+    const layer = layerById(selectedLayerId);
+    if(pos.x>=layer.x && pos.x<=layer.x+layer.w && pos.y>=layer.y && pos.y<=layer.y+layer.h){
+      drag = { type:'movelayer', layerId:layer.id, startX:pos.x, startY:pos.y };
+    }
+  }
+});
+stage.addEventListener('mousemove', e=>{
+  const pos = getCanvasPos(e);
+  if(!drag){
+    // Подсветка кости под курсором в Setup/Animate — просто наглядно и приятнее целиться.
+    if(mode==='setup' || mode==='animate'){
+      const frame = mode==='setup' ? null : playhead;
+      const memo = new Map();
+      let found = null;
+      for(const bone of bones){
+        const tip = boneTip(bone, frame, memo);
+        if(dist(pos.x,pos.y,tip.x,tip.y) < 11){ found=bone.id; break; }
+      }
+      if(!found) for(const bone of bones){
+        if(bone.parentId) continue;
+        const T = poseTransform(bone, frame, memo);
+        if(dist(pos.x,pos.y,T.ox,T.oy) < 11){ found=bone.id; break; }
+      }
+      if(found !== hoverBoneId){ hoverBoneId = found; stage.style.cursor = found ? 'grab' : 'crosshair'; redraw(); }
+    }
+    return;
+  }
+  if(drag.type === 'paint'){
+    const layer = layerById(drag.layerId);
+    if(layer) paintWeightAt(layer, pos);
+    redraw(); renderProps();
+    return;
+  }
+  const frame = mode==='setup' ? null : playhead;
+  if(drag.type === 'rotate'){
+    const bone = boneById(drag.boneId);
+    const memo = new Map();
+    let headX, headY, parentAngle=0;
+    if(bone.parentId){
+      const parent = boneById(bone.parentId);
+      const pT = poseTransform(parent, frame, memo);
+      headX = pT.ox + parent.length*Math.cos(pT.angle);
+      headY = pT.oy + parent.length*Math.sin(pT.angle);
+      parentAngle = pT.angle;
+    } else {
+      const p = frame===null ? {x:bone.x,y:bone.y} : getBonePose(bone, playhead);
+      headX = p.x; headY = p.y;
+    }
+    const worldAngle = Math.atan2(pos.y-headY, pos.x-headX);
+    const localRot = worldAngle - parentAngle;
+    if(mode === 'setup') bone.rotation = localRot;
+    else upsertKeyframe(bone.id, playhead, {rotation: localRot});
+  } else if(drag.type === 'translate'){
+    const bone = boneById(drag.boneId);
+    if(mode === 'setup'){ bone.x=pos.x; bone.y=pos.y; }
+    else upsertKeyframe(bone.id, playhead, {x:pos.x, y:pos.y});
+  } else if(drag.type === 'movelayer'){
+    const layer = layerById(drag.layerId);
+    const dx = pos.x-drag.startX, dy = pos.y-drag.startY;
+    layer.x += dx; layer.y += dy;
+    layer.mesh.verts.forEach(v=>{ v.x+=dx; v.y+=dy; });
+    drag.startX = pos.x; drag.startY = pos.y;
+  }
+  redraw();
+  if(mode==='animate') renderTimeline();
+  if(selectedBoneId) renderProps();
+});
+window.addEventListener('mouseup', ()=>{ if(drag){ drag=null; renderBonesList(); renderTimeline(); } });
+
+/* ===================== ВЫБОР ===================== */
+function selectBone(id){ selectedBoneId=id; selectedLayerId=null; selectedVertexIndex=null; renderAll(); }
+function selectLayer(id){ selectedLayerId=id; selectedBoneId=null; selectedVertexIndex=null; renderAll(); }
+function deselectAll(){ selectedBoneId=null; selectedLayerId=null; selectedVertexIndex=null; renderAll(); }
+
+/* ===================== СПИСКИ (боковые панели) ===================== */
+function renderBonesList(){
+  const el = document.getElementById('bonesList');
+  el.innerHTML = '';
+  if(mode==='weight'){
+    el.insertAdjacentHTML('beforeend','<p class="hint" style="margin:0 0 6px;">Клик по кости — выбрать её для кисти весов.</p>');
+  }
+  if(bones.length===0){ el.insertAdjacentHTML('beforeend','<p class="hint">Костей пока нет.</p>'); return; }
+  bones.forEach(b=>{
+    const isSel = mode==='weight' ? b.id===activeWeightBoneId : b.id===selectedBoneId;
+    const row = document.createElement('div');
+    row.className = 'row-item' + (isSel ? (mode==='weight'?' paint':' active') : '');
+    row.innerHTML = `<span class="nm"><span class="bone-dot" style="background:${boneColor(b.id)}"></span>${esc(b.name)}</span><button data-id="${b.id}" class="delB">✕</button>`;
+    row.querySelector('.nm').onclick = ()=> mode==='weight' ? selectWeightBone(b.id) : selectBone(b.id);
+    row.querySelector('.delB').onclick = (ev)=>{ ev.stopPropagation(); if(confirm('Удалить кость и её потомков?')) deleteBone(b.id); };
+    el.appendChild(row);
+  });
+}
+function selectWeightBone(id){ activeWeightBoneId = id; renderBonesList(); renderProps(); redraw(); }
+function renderLayersList(){
+  const el = document.getElementById('layersList');
+  el.innerHTML = '';
+  if(layers.length===0){ el.innerHTML='<p class="hint">Слоёв пока нет.</p>'; return; }
+  layers.forEach((l,idx)=>{
+    const row = document.createElement('div');
+    row.className = 'row-item' + (l.id===selectedLayerId?' active':'');
+    row.innerHTML = `<span class="nm">🖼 ${esc(l.name)}</span>
+      <button data-a="up">↑</button><button data-a="down">↓</button>
+      <button data-a="vis">${l.visible===false?'🚫':'👁'}</button>
+      <button data-a="del">✕</button>`;
+    row.querySelector('.nm').onclick = ()=> selectLayer(l.id);
+    row.querySelector('[data-a=up]').onclick = ev=>{ ev.stopPropagation(); if(idx>0){ [layers[idx-1],layers[idx]]=[layers[idx],layers[idx-1]]; renderAll(); } };
+    row.querySelector('[data-a=down]').onclick = ev=>{ ev.stopPropagation(); if(idx<layers.length-1){ [layers[idx+1],layers[idx]]=[layers[idx],layers[idx+1]]; renderAll(); } };
+    row.querySelector('[data-a=vis]').onclick = ev=>{ ev.stopPropagation(); l.visible = l.visible===false; renderAll(); };
+    row.querySelector('[data-a=del]').onclick = ev=>{ ev.stopPropagation(); if(confirm('Удалить слой?')){ layers = layers.filter(x=>x.id!==l.id); if(selectedLayerId===l.id) selectedLayerId=null; renderAll(); } };
+    el.appendChild(row);
+  });
+}
+
+/* ===================== СВОЙСТВА ===================== */
+function renderProps(){
+  const el = document.getElementById('propsBody');
+  el.innerHTML = '';
+
+  if(mode === 'weight'){
+    if(!selectedLayerId){ el.innerHTML='<p class="hint">Выберите слой слева, затем кость — для покраски весов.</p>'; return; }
+    const layer = layerById(selectedLayerId);
+    let html = `<h3>Веса слоя «${esc(layer.name)}»</h3>`;
+    if(bones.length===0){ html += '<p class="hint">Сначала создайте кости во вкладке Setup.</p>'; el.innerHTML=html; return; }
+    html += `<div class="brushbar">
+      <div class="row"><span>Кисть</span><input type="range" id="brushR" min="10" max="200" value="${brushRadius}"><span class="wv" id="brushRV">${brushRadius}px</span></div>
+      <div class="row"><span>Сила</span><input type="range" id="brushS" min="5" max="100" value="${Math.round(brushStrength*100)}"><span class="wv" id="brushSV">${Math.round(brushStrength*100)}%</span></div>
+      <p class="hint" style="margin:0;">Выберите кость слева, затем <b>Shift + перетаскивание</b> на холсте — красит её вес. Точки сетки: синий=0%, красный=100% выбранной кости.</p>
+    </div>
+    <button id="autoWeightBtn" class="good" style="width:100%;margin-bottom:10px;">⚡ Авто-веса по ближайшей кости</button>`;
+    el.innerHTML = html;
+    document.getElementById('brushR').oninput = e=>{ brushRadius=parseInt(e.target.value); document.getElementById('brushRV').textContent=brushRadius+'px'; };
+    document.getElementById('brushS').oninput = e=>{ brushStrength=parseInt(e.target.value)/100; document.getElementById('brushSV').textContent=e.target.value+'%'; };
+    document.getElementById('autoWeightBtn').onclick = ()=> autoWeightLayer(layer);
+
+    // Плитка вершин: сетка теперь органическая (по контуру), а не строгий прямоугольный
+    // грид, поэтому раскладываем точки просто плиткой примерно квадратной формы —
+    // цвет каждой ячейки = вес выбранной кости в этой вершине (тепловая карта), как и
+    // цвет точек на самом холсте (см. drawMeshHandles) — два взгляда на одни и те же веса.
+    const nVerts = layer.mesh.verts.length;
+    const tileCols = Math.max(4, Math.round(Math.sqrt(nVerts*1.6)));
+    const gridWrap = document.createElement('div');
+    gridWrap.innerHTML = `<h3 style="margin-top:4px;">Точки сетки (${nVerts})</h3>`;
+    const grid = document.createElement('div'); grid.className='gridmini';
+    grid.style.gridTemplateColumns = `repeat(${tileCols}, 15px)`;
+    const gridCells = [];
+    layer.mesh.verts.forEach((v,i)=>{
+      const cell = document.createElement('div'); cell.className='cell'+(i===selectedVertexIndex?' sel':'');
+      cell.style.background = activeWeightBoneId ? heatColor(layer.weights[i][activeWeightBoneId]||0) : '#33ff99';
+      cell.title = 'вершина #'+i;
+      cell.onclick = ()=>{ selectedVertexIndex=i; renderProps(); redraw(); };
+      grid.appendChild(cell); gridCells.push(cell);
+    });
+    gridWrap.appendChild(grid);
+    el.appendChild(gridWrap);
+
+    if(selectedVertexIndex===null){
+      el.insertAdjacentHTML('beforeend','<p class="hint">Кликните ячейку сетки выше (или точку на холсте), чтобы точно задать её веса вручную.</p>');
+      return;
+    }
+    const precise = document.createElement('div');
+    precise.innerHTML = `<p class="hint">Точная правка вершины #${selectedVertexIndex}. Сумма весов нормализуется автоматически.</p>`;
+    bones.forEach(b=>{
+      const val = Math.round((layer.weights[selectedVertexIndex][b.id]||0)*100);
+      const d = document.createElement('div'); d.className='wslider';
+      d.innerHTML = `<span class="bone-dot" style="background:${boneColor(b.id)}"></span><span style="width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(b.name)}</span>
+        <input type="range" min="0" max="100" value="${val}" data-bone="${b.id}"><span class="wv">${val}%</span>`;
+      const inp = d.querySelector('input');
+      inp.oninput = ()=>{ d.querySelector('.wv').textContent = inp.value+'%'; setWeight(layer, selectedVertexIndex, b.id, inp.value/100); };
+      precise.appendChild(d);
+    });
+    el.appendChild(precise);
+    return;
+  }
+
+  if(selectedBoneId){
+    const bone = boneById(selectedBoneId);
+    const pose = mode==='animate' ? getBonePose(bone, playhead) : {rotation:bone.rotation,x:bone.x,y:bone.y};
+    const isRoot = !bone.parentId;
+    let html = `<h3>Кость</h3>
+      <label class="field">Имя<input type="text" id="pName" value="${esc(bone.name)}"></label>
+      <label class="field">Родитель
+        <select id="pParent"><option value="">— нет (корень) —</option>
+          ${bones.filter(b=>b.id!==bone.id).map(b=>`<option value="${b.id}" ${b.id===bone.parentId?'selected':''}>${esc(b.name)}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field">Длина<input type="number" id="pLen" value="${bone.length}"></label>
+      <label class="field">Поворот (°) ${mode==='animate'?'<i>(поза кадра '+playhead+')</i>':''}<input type="number" id="pRot" value="${Math.round(deg(pose.rotation))}"></label>`;
+    if(isRoot){
+      html += `<label class="field">X<input type="number" id="pX" value="${Math.round(pose.x)}"></label>
+                <label class="field">Y<input type="number" id="pY" value="${Math.round(pose.y)}"></label>`;
+    }
+    el.innerHTML = html;
+    document.getElementById('pName').oninput = e=>{ bone.name=e.target.value; renderBonesList(); renderTimeline(); };
+    document.getElementById('pParent').onchange = e=> reparentBone(bone, e.target.value||null);
+    document.getElementById('pLen').oninput = e=>{ bone.length=parseFloat(e.target.value)||1; redraw(); };
+    document.getElementById('pRot').oninput = e=>{
+      const r = rad(parseFloat(e.target.value)||0);
+      if(mode==='setup') bone.rotation=r; else upsertKeyframe(bone.id, playhead, {rotation:r});
+      redraw(); renderTimeline();
+    };
+    if(isRoot){
+      document.getElementById('pX').oninput = e=>{
+        const v=parseFloat(e.target.value)||0;
+        if(mode==='setup') bone.x=v; else upsertKeyframe(bone.id, playhead, {x:v, y:getBonePose(bone,playhead).y, rotation:getBonePose(bone,playhead).rotation});
+        redraw(); renderTimeline();
+      };
+      document.getElementById('pY').oninput = e=>{
+        const v=parseFloat(e.target.value)||0;
+        if(mode==='setup') bone.y=v; else upsertKeyframe(bone.id, playhead, {y:v, x:getBonePose(bone,playhead).x, rotation:getBonePose(bone,playhead).rotation});
+        redraw(); renderTimeline();
+      };
+    }
+    return;
+  }
+
+  if(selectedLayerId){
+    const layer = layerById(selectedLayerId);
+    let html = `<h3>Слой</h3>
+      <label class="field">Имя<input type="text" id="lName" value="${esc(layer.name)}"></label>
+      <label class="field">Жёсткая привязка к кости
+        <select id="lBone"><option value="">— без привязки —</option>
+          ${bones.map(b=>`<option value="${b.id}" ${b.id===layer.parentBoneId?'selected':''}>${esc(b.name)}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field">Плотность точек: <b id="lMeshVal">${layer.meshCols}</b>
+        <input type="range" id="lMesh" min="1" max="12" value="${layer.meshCols}">
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);margin-bottom:6px;">
+        <input type="checkbox" id="lAutoFit" ${layer.autoFit!==false?'checked':''}> авто-контур по прозрачности (как в Spine)
+      </label>
+      <button id="lRecalcBtn" style="width:100%;">↻ Пересчитать сетку</button>
+      <p class="hint" style="margin:4px 0;">${layer.mesh.verts.length} точек · ${layer.mesh.tris.length} треугольников. ${layer.autoFit!==false ? 'Точки расставлены по силуэту непрозрачных пикселей картинки (пунктир на холсте — его габариты).' : 'Прямоугольная сетка на весь кадр картинки.'} Пересчёт сбрасывает веса вершин.</p>
+      <hr>
+      <h3>Текстуры (смена кадров)</h3>
+      <p class="hint" style="margin:0 0 6px;">Клик по картинке — использовать её ${mode==='animate'?'как ключ на кадре '+playhead:'по умолчанию'}. ★ — кадр по умолчанию.</p>
+      <div class="grp" style="border:none;padding:0;margin-bottom:8px;">
+        <button id="texPrevBtn" title="Предыдущая текстура">◀ Кадр</button>
+        <button id="texNextBtn" title="Следующая текстура">Кадр ▶</button>
+      </div>
+      <div id="texList"></div>
+      <button id="addTexBtnLbl" style="width:100%;margin-top:6px;">+ Текстура</button>
+      <input type="file" id="addTexInput" accept="image/*" style="display:none;">`;
+    el.innerHTML = html;
+    document.getElementById('texPrevBtn').onclick = ()=> stepTexFrame(layer, -1);
+    document.getElementById('texNextBtn').onclick = ()=> stepTexFrame(layer, 1);
+    document.getElementById('lName').oninput = e=>{ layer.name=e.target.value; renderLayersList(); renderTimeline(); };
+    document.getElementById('lBone').onchange = e=> rebindLayerRigid(layer, e.target.value||null);
+    document.getElementById('lMesh').oninput = e=>{ document.getElementById('lMeshVal').textContent = e.target.value; };
+    document.getElementById('lMesh').onchange = e=>{
+      const n = parseInt(e.target.value);
+      layer.meshCols=n; layer.meshRows=n; rebuildMesh(layer); redraw(); renderProps();
+      showToast('Сетка перестроена ('+layer.mesh.verts.length+' точек), веса сброшены');
+    };
+    document.getElementById('lAutoFit').onchange = e=>{ layer.autoFit = e.target.checked; rebuildMesh(layer); redraw(); renderProps(); };
+    document.getElementById('lRecalcBtn').onclick = ()=>{ rebuildMesh(layer); redraw(); renderProps(); showToast('Сетка пересчитана'); };
+    const texListEl = document.getElementById('texList');
+    const curTex = getActiveTexIndex(layer, mode==='animate'?playhead:null);
+    layer.textures.forEach((t,i)=>{
+      const row = document.createElement('div'); row.className='tex-row'+(i===layer.defaultTex?' def':'')+(i===curTex?' cur':'');
+      row.innerHTML = `<img class="tex-thumb" src="${t.dataURL}" title="Использовать этот кадр"><span class="nm" style="flex:1;font-size:11px;">${i}: ${esc(t.name)}</span>
+        <button data-a="up" title="Выше">↑</button><button data-a="down" title="Ниже">↓</button>
+        <button data-a="def" title="Сделать кадром по умолчанию">★</button><button data-a="del" title="Удалить">✕</button>`;
+      row.querySelector('.tex-thumb').onclick = ()=> useTexAsCurrent(layer, i);
+      row.querySelector('[data-a=up]').onclick = ()=>{ if(i>0){ [layer.textures[i-1],layer.textures[i]]=[layer.textures[i],layer.textures[i-1]]; swapTexIndexRefs(layer,i,i-1); renderAll(); } };
+      row.querySelector('[data-a=down]').onclick = ()=>{ if(i<layer.textures.length-1){ [layer.textures[i+1],layer.textures[i]]=[layer.textures[i],layer.textures[i+1]]; swapTexIndexRefs(layer,i,i+1); renderAll(); } };
+      row.querySelector('[data-a=def]').onclick = ()=>{ layer.defaultTex=i; redraw(); renderProps(); };
+      row.querySelector('[data-a=del]').onclick = ()=>{ if(layer.textures.length<=1){ alert('Нельзя удалить единственную текстуру.'); return; } layer.textures.splice(i,1); if(layer.defaultTex>=layer.textures.length) layer.defaultTex=0; (layer.texTrack||[]).forEach(k=>{ if(k.tex>=layer.textures.length) k.tex=0; }); redraw(); renderProps(); };
+      texListEl.appendChild(row);
+    });
+    document.getElementById('addTexBtnLbl').onclick = ()=> document.getElementById('addTexInput').click();
+    document.getElementById('addTexInput').onchange = e=>{
+      const f = e.target.files[0]; if(!f) return;
+      addTextureToLayer(layer, f); e.target.value='';
+    };
+    return;
+  }
+
+  el.innerHTML = '<p class="hint">Выберите кость или слой слева, либо на холсте.</p>';
+}
+
+/* ===================== ЗАГРУЗКА ФАЙЛОВ ===================== */
+function readAsDataURL(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }); }
+function loadImgEl(src){ return new Promise(res=>{ const img=new Image(); img.onload=()=>res(img); img.src=src; }); }
+
+// Пытается разобрать файл как анимированный PNG (APNG) через UPNG.js. Если в файле
+// больше одного кадра — возвращает все кадры с их задержками (мс), иначе отдаёт
+// один кадр как обычную статичную картинку (тот же путь, что был раньше).
+async function decodeImageFileFrames(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const png = UPNG.decode(buf);
+    if(png && png.frames && png.frames.length > 1){
+      const rgba = UPNG.toRGBA8(png);
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      const frames = [];
+      for(let i=0;i<rgba.length;i++){
+        const c = document.createElement('canvas'); c.width=png.width; c.height=png.height;
+        const cctx = c.getContext('2d');
+        const imgData = cctx.createImageData(png.width, png.height);
+        imgData.data.set(new Uint8ClampedArray(rgba[i]));
+        cctx.putImageData(imgData, 0, 0);
+        const dataURL = c.toDataURL('image/png');
+        const img = await loadImgEl(dataURL);
+        const delayMs = (png.frames[i] && png.frames[i].delay) || Math.round(1000/fps);
+        frames.push({img, dataURL, name: baseName+'_'+i, delayMs});
+      }
+      return {width:png.width, height:png.height, frames, animated:true};
+    }
+  }catch(err){ console.warn('Не удалось разобрать как APNG, загружаю как обычную картинку', err); }
+  const dataURL = await readAsDataURL(file);
+  const img = await loadImgEl(dataURL);
+  return {width: img.naturalWidth, height: img.naturalHeight, frames:[{img, dataURL, name:file.name, delayMs:null}], animated:false};
+}
+// Переводит задержки кадров APNG (мс) в номера кадров таймлайна проекта (по текущему fps).
+function apngDelaysToProjectFrames(delaysMs){
+  const frameLen = 1000/fps;
+  let t = 0;
+  const positions = [];
+  for(let i=0;i<delaysMs.length;i++){
+    let pos = Math.round(t/frameLen);
+    if(i>0 && pos<=positions[i-1]) pos = positions[i-1]+1; // гарантируем возрастание кадров
+    positions.push(pos);
+    t += (delaysMs[i] || frameLen);
+  }
+  return positions;
+}
+// Если анимация не помещается в текущее число кадров таймлайна — автоматически увеличивает его.
+function ensureTotalFrames(minFrames){
+  if(minFrames > totalFrames){
+    totalFrames = minFrames;
+    document.getElementById('framesInput').value = totalFrames;
+  }
+}
+
+document.getElementById('addLayerBtnLbl').onclick = ()=> document.getElementById('addLayerInput').click();
+document.getElementById('addLayerInput').onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const decoded = await decodeImageFileFrames(f);
+  const id = uid('l');
+  const w = decoded.width, h = decoded.height;
+  const layer = {
+    id, name:'Слой '+id, parentBoneId: selectedBoneId||null,
+    x:(canvasW-w)/2, y:(canvasH-h)/2, w, h,
+    textures: decoded.frames.map(fr=>({img:fr.img, name:fr.name, dataURL:fr.dataURL})),
+    defaultTex:0, texTrack:[],
+    meshCols:5, meshRows:5, visible:true, autoFit:true
+  };
+  if(decoded.animated){
+    const positions = apngDelaysToProjectFrames(decoded.frames.map(fr=>fr.delayMs));
+    layer.texTrack = positions.map((pos,i)=>({frame:pos, tex:i}));
+    ensureTotalFrames(positions[positions.length-1]+1);
+    showToast('Загружена APNG-анимация: '+decoded.frames.length+' кадров');
+  }
+  rebuildMesh(layer);
+  layers.push(layer);
+  selectLayer(id);
+  renderTimeline();
+  e.target.value='';
+};
+async function addTextureToLayer(layer, file){
+  const decoded = await decodeImageFileFrames(file);
+  const baseIndex = layer.textures.length;
+  decoded.frames.forEach(fr=> layer.textures.push({img:fr.img, name:fr.name, dataURL:fr.dataURL}));
+  if(decoded.animated){
+    const positions = apngDelaysToProjectFrames(decoded.frames.map(fr=>fr.delayMs)).map(p=>p+playhead);
+    if(!layer.texTrack) layer.texTrack = [];
+    positions.forEach((pos,i)=>{
+      layer.texTrack = layer.texTrack.filter(k=>k.frame!==pos);
+      layer.texTrack.push({frame:pos, tex: baseIndex+i});
+    });
+    layer.texTrack.sort((a,b)=>a.frame-b.frame);
+    ensureTotalFrames(positions[positions.length-1]+1);
+    showToast('Добавлена APNG-анимация: '+decoded.frames.length+' кадров');
+  }
+  renderAll();
+}
+document.getElementById('addBoneBtn').onclick = addBone;
+
+/* ===================== РЕЖИМЫ / ПЛЕЕР ===================== */
+const HELP_TEXT = {
+  setup: 'Setup — поза покоя скелета. Тяните за <b>белый кончик</b> кости — вращение, за начало корневой кости — перемещение. Наведите мышь на кость — она подсветится.',
+  animate: 'Animate — двигайте playhead (клик по линейке/дорожке) и позируйте кости, ключи ставятся автоматически. Ключ на таймлайне можно перетащить на другой кадр, а с <kbd>Ctrl</kbd> — скопировать. <kbd>←</kbd><kbd>→</kbd> — кадр, <kbd>Space</kbd> — play, <kbd>K</kbd> — ключ всем костям.',
+  weight: 'Weights — выберите слой и кость слева (кость подсветится), затем <b>Shift + перетаскивание</b> по холсту красит её вес. Или кликните ячейку сетки/точку на холсте для точной правки процентов.'
+};
+function updateHelpBar(){ document.getElementById('helpBar').innerHTML = HELP_TEXT[mode]||''; }
+function setMode(m){
+  mode = m;
+  document.getElementById('modeSetup').classList.toggle('active', m==='setup');
+  document.getElementById('modeAnimate').classList.toggle('active', m==='animate');
+  document.getElementById('modeWeight').classList.toggle('active', m==='weight');
+  if(m==='weight' && !activeWeightBoneId && bones.length) activeWeightBoneId = bones[0].id;
+  updateHelpBar();
+  renderAll();
+}
+document.getElementById('modeSetup').onclick = ()=> setMode('setup');
+document.getElementById('modeAnimate').onclick = ()=> setMode('animate');
+document.getElementById('modeWeight').onclick = ()=> setMode('weight');
+
+function seek(f){ playhead = clamp(Math.round(f), 0, totalFrames-1); document.getElementById('frameLabel').textContent='кадр: '+playhead; redraw(); renderTimeline(); if(selectedBoneId||selectedLayerId) renderProps(); }
+
+/* ---- Навигация по кадрам/ключам, единый ключ для всех костей, имена костей ---- */
+function allTrackFrames(){
+  const set = new Set();
+  bones.forEach(b=>(boneTracks[b.id]||[]).forEach(k=>set.add(k.frame)));
+  layers.forEach(l=>(l.texTrack||[]).forEach(k=>set.add(k.frame)));
+  return [...set].sort((a,b)=>a-b);
+}
+function currentTrackFrames(){
+  if(selectedBoneId) return (boneTracks[selectedBoneId]||[]).map(k=>k.frame);
+  if(selectedLayerId) return (layerById(selectedLayerId).texTrack||[]).map(k=>k.frame);
+  return allTrackFrames();
+}
+function jumpKey(dir){
+  const frames = currentTrackFrames().sort((a,b)=>a-b);
+  if(frames.length===0) return;
+  let target = dir>0 ? frames.find(f=>f>playhead) : [...frames].reverse().find(f=>f<playhead);
+  if(target===undefined) target = dir>0 ? frames[frames.length-1] : frames[0];
+  seek(target);
+}
+function keyAllBones(){
+  if(bones.length===0){ showToast('Нет костей', true); return; }
+  bones.forEach(b=> upsertKeyframe(b.id, playhead, getBonePose(b, playhead)));
+  renderTimeline(); renderBonesList(); showToast('Ключ поставлен для всех костей');
+}
+document.getElementById('prevFrameBtn').onclick = ()=> seek(playhead-1);
+document.getElementById('nextFrameBtn').onclick = ()=> seek(playhead+1);
+document.getElementById('prevKeyBtn').onclick = ()=> jumpKey(-1);
+document.getElementById('nextKeyBtn').onclick = ()=> jumpKey(1);
+document.getElementById('keyAllBtn').onclick = keyAllBones;
+document.getElementById('namesChk').onchange = e=>{ showBoneNames = e.target.checked; redraw(); };
+window.addEventListener('keydown', e=>{
+  const tag = (e.target.tagName||'').toLowerCase();
+  if(tag==='input' || tag==='select' || tag==='textarea') return;
+  if(e.key==='ArrowLeft'){ seek(playhead-1); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ seek(playhead+1); e.preventDefault(); }
+  else if(e.key===' '){ togglePlay(); e.preventDefault(); }
+  else if(e.key==='Home'){ seek(0); e.preventDefault(); }
+  else if(e.key==='End'){ seek(totalFrames-1); e.preventDefault(); }
+  else if(e.key==='k' || e.key==='K'){ keyAllBones(); e.preventDefault(); }
+});
+
+function togglePlay(){
+  isPlaying = !isPlaying;
+  document.getElementById('playBtn').textContent = isPlaying ? '⏸ Пауза' : '▶ Play';
+  if(isPlaying){
+    if(mode!=='animate') setMode('animate');
+    let last = performance.now();
+    const loopFn = now=>{
+      if(!isPlaying) return;
+      if(now-last >= 1000/fps){
+        last = now;
+        let nf = playhead+1;
+        if(nf>=totalFrames){ nf = loop ? 0 : totalFrames-1; if(!loop){ isPlaying=false; document.getElementById('playBtn').textContent='▶ Play'; } }
+        seek(nf);
+      }
+      if(isPlaying) playRAF = requestAnimationFrame(loopFn);
+    };
+    playRAF = requestAnimationFrame(loopFn);
+  } else cancelAnimationFrame(playRAF);
+}
+document.getElementById('playBtn').onclick = togglePlay;
+document.getElementById('fpsInput').onchange = e=>{ fps = parseInt(e.target.value)||24; };
+document.getElementById('framesInput').onchange = e=>{ totalFrames = Math.max(2, parseInt(e.target.value)||60); if(playhead>=totalFrames) seek(totalFrames-1); renderTimeline(); };
+document.getElementById('loopChk').onchange = e=>{ loop = e.target.checked; };
+document.getElementById('applySizeBtn').onclick = ()=>{
+  canvasW = parseInt(document.getElementById('cwInput').value)||640;
+  canvasH = parseInt(document.getElementById('chInput').value)||480;
+  stage.width = canvasW; stage.height = canvasH;
+  redraw();
+};
+document.getElementById('addKeyBtn').onclick = ()=>{
+  if(selectedBoneId){ const b=boneById(selectedBoneId); upsertKeyframe(b.id, playhead, getBonePose(b,playhead)); }
+  else if(selectedLayerId){ upsertTexKey(selectedLayerId, playhead, getActiveTexIndex(layerById(selectedLayerId), playhead)); }
+  renderTimeline();
+};
+document.getElementById('delKeyBtn').onclick = ()=>{
+  if(selectedBoneId){ const t=boneTracks[selectedBoneId]; if(t){ const i=t.findIndex(k=>k.frame===playhead); if(i>=0) t.splice(i,1); } }
+  else if(selectedLayerId){ const l=layerById(selectedLayerId); const t=l.texTrack||[]; const i=t.findIndex(k=>k.frame===playhead); if(i>=0) t.splice(i,1); }
+  renderTimeline(); redraw();
+};
+
+/* ===================== ТАЙМЛАЙН ===================== */
+function renderTimeline(){
+  document.getElementById('frameLabel').textContent = 'кадр: '+playhead;
+  const el = document.getElementById('timelineBody');
+  el.innerHTML = '';
+  const totalW = totalFrames*PX_PER_FRAME;
+
+  const rulerRow = document.createElement('div'); rulerRow.className='tl-row';
+  rulerRow.innerHTML = `<div class="tl-label"></div><div class="tl-track ruler" style="width:${totalW}px;"></div>`;
+  const rulerTrack = rulerRow.querySelector('.tl-track');
+  for(let f=0; f<=totalFrames; f+=5){
+    const s=document.createElement('span'); s.style.left=(f*PX_PER_FRAME)+'px'; s.textContent=f; rulerTrack.appendChild(s);
+  }
+  rulerTrack.onclick = e=>{ const r=rulerTrack.getBoundingClientRect(); seek((e.clientX-r.left)/PX_PER_FRAME); };
+  el.appendChild(rulerRow);
+
+  const rows = [
+    ...bones.map(b=>({type:'bone', id:b.id, name:'🦴 '+b.name, track:boneTracks[b.id]||[]})),
+    ...layers.map(l=>({type:'layer', id:l.id, name:'🖼 '+l.name, track:l.texTrack||[]}))
+  ];
+  rows.forEach(r=>{
+    const sel = (r.type==='bone'&&r.id===selectedBoneId)||(r.type==='layer'&&r.id===selectedLayerId);
+    const row = document.createElement('div'); row.className='tl-row';
+    const label = document.createElement('div'); label.className='tl-label'+(sel?' sel':''); label.textContent=r.name;
+    label.onclick = ()=> r.type==='bone' ? selectBone(r.id) : selectLayer(r.id);
+    row.appendChild(label);
+    const track = document.createElement('div'); track.className='tl-track'; track.style.width=totalW+'px';
+    r.track.forEach(k=>{
+      const dia = document.createElement('div'); dia.className='tl-key'+(r.type==='layer'?' tex':'');
+      dia.style.left=(k.frame*PX_PER_FRAME)+'px';
+      dia.title='кадр '+k.frame+' — перетащите, чтобы передвинуть; Ctrl+перетащите — скопировать; двойной клик — удалить';
+      dia.onclick = ev=> ev.stopPropagation();
+      dia.ondblclick = ev=>{
+        ev.stopPropagation();
+        const i = r.track.indexOf(k);
+        if(i>=0) r.track.splice(i,1);
+        renderTimeline(); redraw();
+      };
+      dia.onmousedown = ev=> startKeyDrag(ev, r, k, dia, track);
+      track.appendChild(dia);
+    });
+    track.onclick = e=>{
+      if(suppressTrackClick) return;
+      const rr=track.getBoundingClientRect(); const f=(e.clientX-rr.left)/PX_PER_FRAME; if(r.type==='bone') selectBone(r.id); else selectLayer(r.id); seek(f);
+    };
+    row.appendChild(track);
+    el.appendChild(row);
+  });
+  const ph = document.createElement('div'); ph.className='tl-playhead';
+  ph.style.left = (LABEL_W + playhead*PX_PER_FRAME) + 'px'; ph.style.height='100%';
+  el.appendChild(ph);
+}
+
+/* ---- Перетаскивание ключей на таймлайне: обычная тяга — переместить, Ctrl/⌘/Alt+тяга — скопировать ----
+   Во время перетаскивания renderTimeline() не вызывается (иначе элемент, за который тянем, исчезнет
+   вместе с перерисовкой) — двигается только сам DOM-узел (или его клон-«призрак» при копировании),
+   а данные (r.track) меняются один раз, в момент отпускания кнопки мыши. */
+function startKeyDrag(ev, r, k, dia, track){
+  if(ev.button!==0) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const isCopy = ev.ctrlKey || ev.metaKey || ev.altKey;
+  const ghost = isCopy ? dia.cloneNode(true) : dia;
+  if(isCopy){ ghost.classList.add('tl-key-ghost'); track.appendChild(ghost); }
+  document.body.style.cursor = 'grabbing';
+  keyDrag = { r, k, dia, ghost, track, startX:ev.clientX, origFrame:k.frame, curFrame:k.frame, isCopy, moved:false };
+}
+window.addEventListener('mousemove', e=>{
+  if(!keyDrag) return;
+  const dx = e.clientX - keyDrag.startX;
+  if(Math.abs(dx) > 3) keyDrag.moved = true;
+  const df = Math.round(dx / PX_PER_FRAME);
+  const nf = clamp(keyDrag.origFrame + df, 0, totalFrames-1);
+  keyDrag.curFrame = nf;
+  keyDrag.ghost.style.left = (nf*PX_PER_FRAME)+'px';
+  keyDrag.ghost.title = 'кадр '+nf+(keyDrag.isCopy ? ' — отпустите, чтобы скопировать сюда' : ' — отпустите, чтобы переместить сюда');
+});
+window.addEventListener('mouseup', ()=>{
+  if(!keyDrag) return;
+  const kd = keyDrag; keyDrag = null;
+  document.body.style.cursor = '';
+  if(kd.isCopy) kd.ghost.remove();
+  if(!kd.moved || kd.curFrame === kd.origFrame) return; // обычный клик без сдвига — ничего не меняем
+  suppressTrackClick = true; setTimeout(()=>{ suppressTrackClick = false; }, 0);
+  if(kd.isCopy){
+    const exIdx = kd.r.track.findIndex(x=>x.frame===kd.curFrame);
+    if(exIdx>=0) kd.r.track.splice(exIdx,1);
+    kd.r.track.push({...kd.k, frame:kd.curFrame});
+    kd.r.track.sort((a,b)=>a.frame-b.frame);
+    showToast('Ключ скопирован на кадр '+kd.curFrame);
+  } else {
+    const exIdx = kd.r.track.findIndex(x=>x!==kd.k && x.frame===kd.curFrame);
+    if(exIdx>=0) kd.r.track.splice(exIdx,1);
+    kd.k.frame = kd.curFrame;
+    kd.r.track.sort((a,b)=>a.frame-b.frame);
+  }
+  renderTimeline(); redraw();
+  if(selectedBoneId||selectedLayerId) renderProps();
+});
+
+/* ===================== ПРОЕКТ: СОХРАНИТЬ / ЗАГРУЗИТЬ ===================== */
+document.getElementById('saveBtn').onclick = ()=>{
+  const data = {
+    version:1, canvasW, canvasH, fps, totalFrames,
+    bones: bones.map(b=>({...b})),
+    boneTracks: JSON.parse(JSON.stringify(boneTracks)),
+    layers: layers.map(l=>({
+      id:l.id, name:l.name, parentBoneId:l.parentBoneId, x:l.x, y:l.y, w:l.w, h:l.h,
+      defaultTex:l.defaultTex, texTrack:l.texTrack, meshCols:l.meshCols, meshRows:l.meshRows,
+      visible:l.visible, mesh:l.mesh, weights:l.weights, autoFit:l.autoFit, contentBox:l.contentBox,
+      textures: l.textures.map(t=>({name:t.name, dataURL:t.dataURL}))
+    }))
+  };
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='bonemaker_project.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Проект сохранён');
+};
+document.getElementById('loadBtnLbl').onclick = ()=> document.getElementById('loadInput').click();
+document.getElementById('loadInput').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      canvasW=data.canvasW; canvasH=data.canvasH; stage.width=canvasW; stage.height=canvasH;
+      document.getElementById('cwInput').value=canvasW; document.getElementById('chInput').value=canvasH;
+      fps=data.fps; totalFrames=data.totalFrames;
+      document.getElementById('fpsInput').value=fps; document.getElementById('framesInput').value=totalFrames;
+      bones = data.bones; boneTracks = data.boneTracks;
+      const newLayers = [];
+      for(const ld of data.layers){
+        const textures = [];
+        for(const t of ld.textures){ const img = await loadImgEl(t.dataURL); textures.push({img,name:t.name,dataURL:t.dataURL}); }
+        // Проекты, сохранённые до появления авто-контура, хранят сетку без списка треугольников
+        // (только cols/rows) — достраиваем его из прямоугольной топологии для совместимости.
+        if(ld.mesh && !ld.mesh.tris && ld.mesh.cols!=null && ld.mesh.rows!=null){
+          const {cols, rows} = ld.mesh, tris=[];
+          for(let j=0;j<rows;j++) for(let i=0;i<cols;i++){
+            const i00=j*(cols+1)+i, i10=i00+1, i01=i00+(cols+1), i11=i01+1;
+            tris.push([i00,i10,i01], [i10,i11,i01]);
+          }
+          ld.mesh.tris = tris;
+        }
+        newLayers.push({ autoFit:true, contentBox:{x:0,y:0,w:ld.w,h:ld.h}, ...ld, textures });
+      }
+      layers = newLayers;
+      activeWeightBoneId = null; hoverBoneId = null;
+      let max=0;
+      [...bones, ...layers].forEach(o=>{ const n=parseInt(String(o.id).replace(/\D/g,''))||0; if(n>max) max=n; });
+      nextId = max+1;
+      selectedBoneId=null; selectedLayerId=null; selectedVertexIndex=null; playhead=0;
+      renderAll();
+      showToast('Проект загружен');
+    }catch(err){ console.error(err); showToast('Ошибка загрузки проекта', true); }
+  };
+  reader.readAsText(f);
+  e.target.value='';
+};
+
+/* ===================== ЭКСПОРТ APNG (на основе UPNG.js) ===================== */
+// Побайтово (по 32-битным пикселям, так быстрее) сравнивает два кадра ImageData.
+function framesPixelsEqual(a, b){
+  if(a.length !== b.length) return false;
+  const ua = new Uint32Array(a.buffer, a.byteOffset, a.length>>2);
+  const ub = new Uint32Array(b.buffer, b.byteOffset, b.length>>2);
+  for(let i=0;i<ua.length;i++){ if(ua[i]!==ub[i]) return false; }
+  return true;
+}
+// Схлопывает подряд идущие одинаковые кадры в один с суммарной задержкой — статичные
+// участки анимации (например, удержание позы на много кадров таймлайна) не раздувают
+// файл десятками пиксельно идентичных кадров. Формат APNG хранит задержку кадра в
+// unsigned short (delay_num), поэтому длительность одного склеенного кадра ограничена.
+const APNG_MAX_FRAME_DELAY_MS = 65500;
+function mergeIdenticalFrames(rawFrames, rawDelays){
+  const frames = [], delays = [];
+  for(let i=0;i<rawFrames.length;i++){
+    const canMerge = i>0 && delays.length>0
+      && (delays[delays.length-1] + rawDelays[i]) <= APNG_MAX_FRAME_DELAY_MS
+      && framesPixelsEqual(rawFrames[i], rawFrames[i-1]);
+    if(canMerge){ delays[delays.length-1] += rawDelays[i]; }
+    else { frames.push(rawFrames[i].buffer); delays.push(rawDelays[i]); }
+  }
+  return {frames, delays};
+}
+async function exportAPNG(){
+  try{
+    if(layers.length===0){ showToast('Нет слоёв для экспорта', true); return; }
+    // Рендерим каждый кадр напрямую в целевом разрешении (без промежуточного увеличенного
+    // канваса и последующего downscale) — downscale и был источником замыливания картинки.
+    // Швы между треугольниками гасятся минимальным нахлёстом клипа (см. expandTriangle).
+    const off = document.createElement('canvas'); off.width=canvasW; off.height=canvasH;
+    const octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = true;
+    if('imageSmoothingQuality' in octx) octx.imageSmoothingQuality = 'high';
+    const rawFrames = [], rawDelays = [];
+    const delayMs = Math.round(1000/fps);
+    for(let f=0; f<totalFrames; f++){
+      octx.clearRect(0,0,canvasW,canvasH);
+      const bindMemo=new Map(), curMemo=new Map();
+      for(const layer of layers){ if(layer.visible!==false) renderLayerAt(octx, layer, f, bindMemo, curMemo); }
+      rawFrames.push(octx.getImageData(0,0,canvasW,canvasH).data);
+      rawDelays.push(delayMs);
+    }
+    const {frames, delays} = mergeIdenticalFrames(rawFrames, rawDelays);
+    const buf = UPNG.encode(frames, canvasW, canvasH, 0, delays);
+    const blob = new Blob([buf], {type:'image/png'});
+    const url = URL.createObjectURL(blob);
+    const img = document.getElementById('resultImg');
+    img.src = url; img.style.display='inline-block';
+    const dl = document.getElementById('dlLink'); dl.href=url; dl.style.display='inline-block';
+    const mergedInfo = frames.length<rawFrames.length ? ` (склеено из ${rawFrames.length})` : '';
+    document.getElementById('resultInfo').textContent = `APNG готов · ${frames.length} кадров${mergedInfo} · ${(blob.size/1024).toFixed(1)} KB`;
+    showToast('APNG успешно создан');
+  }catch(err){ console.error(err); showToast('Ошибка экспорта APNG', true); }
+}
+document.getElementById('exportBtn').onclick = exportAPNG;
+
+/* ===================== TOAST ===================== */
+function showToast(msg, isErr){
+  const t = document.createElement('div'); t.className='toast'+(isErr?' err':''); t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+/* ===================== ГЛАВНЫЙ RENDER ===================== */
+function renderAll(){
+  renderBonesList();
+  renderLayersList();
+  renderProps();
+  renderTimeline();
+  redraw();
+}
+updateHelpBar();
+renderAll();
+</script>
+</body>
+</html>
