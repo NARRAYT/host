@@ -28,8 +28,12 @@
 
   body{
     background-image:
-      repeating-linear-gradient(135deg, rgba(255,255,255,0.012) 0 2px, transparent 2px 4px),
-      radial-gradient(ellipse at 50% -10%, rgba(255,255,255,0.05), transparent 60%);
+      linear-gradient(rgba(6,6,6,0.82), rgba(6,6,6,0.9)),
+      url('https://narrayt.github.io/host/sources/asdF.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
 
   ::selection{ background:var(--bone); color:var(--void); }
@@ -296,7 +300,23 @@
   }
   .thumb img{
     width:100%; height:100%; object-fit:cover;
-    filter:grayscale(1) contrast(1.05);
+  }
+  .thumb.is-image{ cursor:pointer; }
+
+  #lightbox{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.9);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+    z-index:60;
+  }
+  #lightbox.show{ display:flex; }
+  #lightbox img{
+    max-width:100%;
+    max-height:100%;
+    border:1px solid var(--iron);
   }
 
   .fname{
@@ -397,9 +417,7 @@
       <input id="token-input" type="password" placeholder="ghp_&hellip;" autocomplete="off" spellcheck="false">
       <button id="toggle-token" type="button" title="показать/скрыть">•••</button>
     </div>
-    <p class="hint">Хранится только в этой вкладке — никуда не уходит, кроме GitHub. Нужны права <b style="color:var(--bone)">Contents: read &amp; write</b> на репозиторий.</p>
-
-    <button id="enter-btn" class="btn-primary">Отпереть трюм</button>
+    <button id="enter-btn" class="btn-primary" style="margin-top:22px;">Отпереть трюм</button>
     <div id="login-error" class="login-error">Не вышло. Проверь токен и доступ к репозиторию.</div>
   </div>
 </div>
@@ -408,7 +426,6 @@
 <div id="app-view">
   <div class="topbar">
     <div class="brand glyph">☠ HOST</div>
-    <div class="repo">владения: <b id="repo-label">&mdash;</b></div>
     <div class="logout" id="logout-btn">выйти</div>
   </div>
 
@@ -434,6 +451,7 @@
 </div>
 
 <div id="toast-stack"></div>
+<div id="lightbox"><img id="lightbox-img" src="" alt=""></div>
 
 <script>
 (function(){
@@ -478,7 +496,6 @@
   const toggleToken = document.getElementById('toggle-token');
   const enterBtn    = document.getElementById('enter-btn');
   const loginError  = document.getElementById('login-error');
-  const repoLabel   = document.getElementById('repo-label');
   const logoutBtn   = document.getElementById('logout-btn');
   const dropzone    = document.getElementById('dropzone');
   const pickBtn     = document.getElementById('pick-btn');
@@ -490,7 +507,6 @@
   const refreshBtn  = document.getElementById('refresh-btn');
   const toastStack  = document.getElementById('toast-stack');
 
-  repoLabel.textContent = REPO.owner + '/' + REPO.repo;
 
   /* ---------- toast ---------- */
   function toast(msg, isErr){
@@ -621,7 +637,7 @@
       const cat = category(f.name);
       let thumb;
       if (cat === 'image'){
-        thumb = '<div class="thumb"><img src="' + f.download_url + '" loading="lazy" alt=""></div>';
+        thumb = '<div class="thumb is-image" data-act="preview" data-url="' + f.download_url + '"><img src="' + f.download_url + '" loading="lazy" alt=""></div>';
       } else if (cat === 'audio'){
         thumb = '<div class="thumb glyph">♪</div>';
       } else {
@@ -663,13 +679,35 @@
   function escapeAttr(s){ return escapeHtml(s); }
 
   manifestWrap.addEventListener('click', function(e){
-    const act = e.target.getAttribute('data-act');
-    if (!act) return;
-    const row = e.target.closest('tr');
+    const target = e.target.closest('[data-act]');
+    if (!target) return;
+    const act = target.getAttribute('data-act');
+    if (act === 'preview'){
+      openLightbox(target.getAttribute('data-url'));
+      return;
+    }
+    const row = target.closest('tr');
     const name = row.getAttribute('data-name');
     if (act === 'copy') copyName(name);
     if (act === 'delete') deleteFile(name);
     if (act === 'rename') startRename(row, name);
+  });
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  function openLightbox(url){
+    lightboxImg.src = url;
+    lightbox.classList.add('show');
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('show');
+    lightboxImg.src = '';
+  }
+  lightbox.addEventListener('click', function(e){
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeLightbox();
   });
 
   tabsEl.addEventListener('click', function(e){
