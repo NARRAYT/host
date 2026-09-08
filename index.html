@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HOST</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23060606'/%3E%3Ccircle cx='16' cy='14' r='10' fill='%23ececec'/%3E%3Ccircle cx='11.5' cy='13' r='2.6' fill='%23060606'/%3E%3Ccircle cx='20.5' cy='13' r='2.6' fill='%23060606'/%3E%3Cpath d='M13 20 L13 25 M16 20 L16 26 M19 20 L19 25' stroke='%23ececec' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23060606'/%3E%3Cpath d='M5 10c0-1.1.9-2 2-2h6l2 2.5h10c1.1 0 2 .9 2 2V23c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V10z' fill='%23ececec'/%3E%3Cpath d='M5 13h22' stroke='%23060606' stroke-width='1.3'/%3E%3C/svg%3E">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=PT+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Special+Elite&family=PT+Mono&display=swap');
 
   :root{
     --void:  #060606;
@@ -14,6 +14,8 @@
     --iron:  #2b2b2b;
     --ash:   #8f8f8a;
     --bone:  #ececea;
+    --blood: #7a1f1f;
+    --blood-bright: #a83232;
   }
 
   *{ box-sizing:border-box; }
@@ -28,7 +30,7 @@
 
   body{
     background-image:
-      linear-gradient(rgba(6,6,6,0.82), rgba(6,6,6,0.9)),
+      linear-gradient(rgba(6,6,6,0.82), rgba(6,6,6,0.92)),
       url('https://narrayt.github.io/host/sources/asdF.png');
     background-size: cover;
     background-position: center;
@@ -36,7 +38,7 @@
     background-repeat: no-repeat;
   }
 
-  ::selection{ background:var(--bone); color:var(--void); }
+  ::selection{ background:var(--blood); color:var(--bone); }
 
   a{ color:var(--bone); }
 
@@ -60,7 +62,7 @@
   }
   #login-view.hidden{ display:none; }
 
-  #app-view{ display:none; max-width:920px; margin:0 auto; padding:28px 20px 80px; }
+  #app-view{ display:none; max-width:960px; margin:0 auto; padding:28px 20px 80px; }
   #app-view.visible{ display:block; }
 
   /* ---------- login card ---------- */
@@ -69,24 +71,26 @@
     width:100%; max-width:380px;
     border:1px solid var(--iron);
     background:var(--smoke);
-    padding:38px 30px 30px;
+    padding:40px 30px 32px;
     position:relative;
   }
 
   .poster .skull{
     text-align:center;
-    font-size:30px;
+    font-size:32px;
     line-height:1;
     margin-bottom:10px;
+    text-shadow:0 0 18px rgba(122,31,31,0.35);
   }
 
   .poster h1{
     font-family:'Special Elite', 'PT Mono', monospace;
     font-weight:400;
     text-align:center;
-    font-size:28px;
-    letter-spacing:2px;
-    margin:0 0 6px;
+    font-size:38px;
+    letter-spacing:3px;
+    margin:0 0 8px;
+    text-shadow:0 0 14px rgba(122,31,31,0.25);
   }
 
   .poster .tagline{
@@ -95,6 +99,7 @@
     font-size:12.5px;
     margin:0 0 30px;
     line-height:1.5;
+    letter-spacing:0.5px;
   }
 
   .field-label{
@@ -110,6 +115,8 @@
     background:var(--void);
     margin-bottom:6px;
   }
+
+  .token-row:focus-within{ border-color:var(--blood); }
 
   .token-row input{
     flex:1;
@@ -138,19 +145,19 @@
     font-size:13.5px;
     letter-spacing:0.5px;
     cursor:pointer;
-    transition:background 0.15s, color 0.15s;
+    transition:background 0.15s, color 0.15s, box-shadow 0.15s;
   }
-  .btn-primary:hover{ background:var(--void); color:var(--bone); }
+  .btn-primary:hover{ background:var(--void); color:var(--bone); box-shadow:0 0 0 1px var(--blood) inset; }
   .btn-primary:disabled{ opacity:0.45; cursor:default; }
-  .btn-primary:disabled:hover{ background:var(--bone); color:var(--void); }
+  .btn-primary:disabled:hover{ background:var(--bone); color:var(--void); box-shadow:none; }
 
   .login-error{
     margin-top:14px;
     font-size:12px;
     color:var(--bone);
-    border-left:2px solid var(--bone);
+    border-left:2px solid var(--blood);
     padding:8px 10px;
-    background:rgba(255,255,255,0.04);
+    background:rgba(122,31,31,0.08);
     display:none;
   }
   .login-error.show{ display:block; }
@@ -166,11 +173,12 @@
     padding-bottom:16px;
     border-bottom:1px solid var(--iron);
     margin-bottom:26px;
+    position:relative;
   }
 
   .topbar .brand{
     font-family:'Special Elite', monospace;
-    font-size:20px;
+    font-size:26px;
     letter-spacing:1.5px;
   }
 
@@ -181,7 +189,7 @@
     border:1px solid var(--iron);
     padding:6px 11px;
   }
-  .logout:hover{ color:var(--bone); border-color:var(--bone); }
+  .logout:hover{ color:var(--bone); border-color:var(--blood); }
 
   /* ---------- dropzone ---------- */
 
@@ -192,7 +200,7 @@
     margin-bottom:34px;
     transition:border-color 0.15s, background 0.15s;
   }
-  .dropzone.drag{ border-color:var(--bone); background:rgba(255,255,255,0.03); }
+  .dropzone.drag{ border-color:var(--blood); background:rgba(122,31,31,0.05); }
 
   .dropzone p{ margin:0 0 14px; font-size:13px; color:var(--ash); }
 
@@ -203,7 +211,7 @@
     cursor:pointer;
     color:var(--bone);
   }
-  .btn-outline:hover{ border-color:var(--bone); }
+  .btn-outline:hover{ border-color:var(--blood); }
 
   .status-line{
     margin-top:14px;
@@ -212,7 +220,7 @@
     min-height:16px;
   }
 
-  /* ---------- manifest ---------- */
+  /* ---------- manifest header ---------- */
 
   .manifest-head{
     display:flex;
@@ -220,25 +228,19 @@
     justify-content:space-between;
     flex-wrap:wrap;
     gap:12px;
-    margin-bottom:14px;
+    margin-bottom:18px;
   }
 
-  .manifest-head h2{
-    font-weight:400;
-    font-size:14px;
-    margin:0;
-    letter-spacing:0.5px;
-  }
-
-  .tabs{ display:flex; gap:2px; }
+  .tabs{ display:flex; gap:2px; flex-wrap:wrap; }
   .tabs button{
     font-size:12px;
     padding:6px 10px;
     color:var(--ash);
     cursor:pointer;
     border-bottom:1px solid transparent;
+    white-space:nowrap;
   }
-  .tabs button.active{ color:var(--bone); border-bottom-color:var(--bone); }
+  .tabs button.active{ color:var(--bone); border-bottom-color:var(--blood); }
   .tabs button:hover{ color:var(--bone); }
 
   .refresh{
@@ -249,46 +251,89 @@
   }
   .refresh:hover{ color:var(--bone); }
 
-  table.ledger{
-    width:100%;
-    border-collapse:collapse;
-    font-size:13px;
+  /* ---------- album grid ---------- */
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(136px, 1fr));
+    gap:18px;
   }
 
-  table.ledger thead th{
-    text-align:left;
-    font-weight:400;
-    color:var(--ash);
-    font-size:11px;
-    padding:0 8px 8px;
-    border-bottom:1px solid var(--iron);
-  }
-
-  table.ledger tbody tr{
-    border-bottom:1px solid var(--iron);
-  }
-  table.ledger tbody tr:hover{ background:rgba(255,255,255,0.025); }
-
-  table.ledger td{
-    padding:10px 8px;
-    vertical-align:middle;
-  }
-
-  .col-thumb{ width:44px; }
-
-  .thumb{
-    width:34px; height:34px;
+  .card{
     border:1px solid var(--iron);
+    background:var(--smoke);
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    position:relative;
+    transition:border-color 0.15s;
+  }
+  .card:hover{ border-color:var(--blood); }
+
+  .card-thumb{
+    width:100%;
+    aspect-ratio:1;
+    border:1px solid var(--iron);
+    background:var(--void);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden;
-    background:var(--smoke);
-    font-size:14px;
+    font-size:26px;
     color:var(--ash);
   }
-  .thumb img{
-    width:100%; height:100%; object-fit:cover;
+  .card-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .card-thumb.is-image{ cursor:pointer; }
+  .card-thumb.is-text{ cursor:pointer; }
+
+  .card-name{
+    font-size:12px;
+    text-align:center;
+    word-break:break-all;
+    line-height:1.35;
+    cursor:default;
   }
-  .thumb.is-image{ cursor:pointer; }
+
+  .card-dir{
+    font-size:10px;
+    text-align:center;
+    color:var(--ash);
+    margin-top:-6px;
+    word-break:break-all;
+  }
+
+  .card-audio audio{
+    width:100%;
+    height:26px;
+    filter:grayscale(1);
+  }
+
+  .card-actions{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding-top:2px;
+    border-top:1px solid var(--iron);
+  }
+
+  .icon-btn{
+    cursor:pointer;
+    color:var(--ash);
+    font-size:13px;
+    padding:2px 5px;
+  }
+  .icon-btn:hover{ color:var(--blood-bright); }
+
+  .rename-input{
+    border:1px solid var(--blood);
+    background:var(--void);
+    padding:5px 6px;
+    font-size:12px;
+    width:100%;
+    text-align:center;
+  }
+  .rename-input:focus{ outline:none; }
 
   #lightbox{
     position:fixed; inset:0;
@@ -306,42 +351,59 @@
     border:1px solid var(--iron);
   }
 
-  .fname{
-    cursor:pointer;
-    border-bottom:1px dotted var(--iron);
+  #text-viewer{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.9);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+    z-index:60;
+  }
+  #text-viewer.show{ display:flex; }
+  #text-viewer .text-panel{
+    width:100%;
+    max-width:720px;
+    max-height:100%;
+    background:var(--smoke);
+    border:1px solid var(--iron);
+    display:flex;
+    flex-direction:column;
+  }
+  #text-viewer .text-panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 14px;
+    border-bottom:1px solid var(--iron);
+    font-size:12px;
+    color:var(--ash);
     word-break:break-all;
   }
-  .fname:hover{ border-bottom-color:var(--bone); }
-
-  .col-actions{ width:64px; text-align:right; white-space:nowrap; }
-  .icon-btn{
+  #text-viewer .text-panel-head span.close-btn{
     cursor:pointer;
     color:var(--ash);
-    font-size:13px;
-    padding:2px 5px;
+    font-size:15px;
+    flex-shrink:0;
   }
-  .icon-btn:hover{ color:var(--bone); }
-
-  .rename-input{
-    border:1px solid var(--bone);
-    background:var(--void);
-    padding:4px 6px;
-    font-size:13px;
-    width:100%;
-  }
-  .rename-input:focus{ outline:none; }
-
-  .audio-cell audio{
-    height:26px;
-    width:170px;
-    filter:grayscale(1);
+  #text-viewer .text-panel-head span.close-btn:hover{ color:var(--bone); }
+  #text-viewer pre{
+    margin:0;
+    padding:16px;
+    overflow:auto;
+    font-size:12.5px;
+    line-height:1.5;
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:var(--bone);
   }
 
   .empty{
     text-align:center;
     color:var(--ash);
     font-size:13px;
-    padding:40px 10px;
+    padding:44px 10px;
     border:1px dashed var(--iron);
   }
 
@@ -369,17 +431,11 @@
     transition:opacity 0.2s, transform 0.2s;
     white-space:nowrap;
   }
-  .toast.err{ background:var(--void); color:var(--bone); border-color:var(--bone); }
+  .toast.err{ background:var(--void); color:var(--bone); border-color:var(--blood); }
   .toast.show{ opacity:1; transform:translateY(0); }
 
-  @media (max-width:620px){
-    table.ledger thead{ display:none; }
-    table.ledger, table.ledger tbody, table.ledger tr, table.ledger td{ display:block; width:100%; }
-    table.ledger tr{ padding:10px 0; }
-    table.ledger td{ padding:2px 0; border:none; }
-    .col-thumb{ float:left; margin-right:10px; }
-    .col-actions{ text-align:left; margin-top:6px; }
-    .audio-cell audio{ width:100%; }
+  @media (max-width:480px){
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:12px; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -394,7 +450,7 @@
   <div class="poster">
     <div class="skull glyph">☠</div>
     <h1>HOST</h1>
-    <p class="tagline">хост-трюм</p>
+    <p class="tagline">личное файловое хранилище</p>
 
     <label class="field-label" for="token-input">Токен доступа</label>
     <div class="token-row">
@@ -414,20 +470,14 @@
   </div>
 
   <div class="dropzone" id="dropzone">
-    <p>перетащить контент или</p>
+    <p id="dropzone-hint">перетащить файлы или</p>
     <button class="btn-outline" id="pick-btn" type="button">выбрать файлы</button>
     <input type="file" id="file-input" multiple style="display:none">
     <div class="status-line" id="status-line"></div>
   </div>
 
   <div class="manifest-head">
-    <h2>Контент</h2>
-    <div class="tabs" id="tabs">
-      <button data-filter="all" class="active">все</button>
-      <button data-filter="image">картинки</button>
-      <button data-filter="audio">музыка</button>
-      <button data-filter="other">прочее</button>
-    </div>
+    <div class="tabs" id="tabs"><button data-filter="all" class="active">все</button></div>
     <span class="refresh" id="refresh-btn" title="обновить">⟳</span>
   </div>
 
@@ -436,6 +486,15 @@
 
 <div id="toast-stack"></div>
 <div id="lightbox"><img id="lightbox-img" src="" alt=""></div>
+<div id="text-viewer">
+  <div class="text-panel">
+    <div class="text-panel-head">
+      <span id="text-viewer-name"></span>
+      <span class="close-btn" id="text-viewer-close">✕</span>
+    </div>
+    <pre id="text-viewer-body"></pre>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -451,13 +510,32 @@
   }
   const REPO = detectRepo();
   const API = 'https://api.github.com';
+  const IS_USER_SITE = REPO.repo.toLowerCase() === (REPO.owner + '.github.io').toLowerCase();
+
+  /* path of the page currently running this app, relative to repo root — always excluded from the listing */
+  function selfPath(){
+    let segs = location.pathname.split('/').filter(Boolean);
+    if (!IS_USER_SITE && segs.length) segs = segs.slice(1);
+    let path = segs.join('/');
+    if (!path) path = 'index.html';
+    else if (!/\.[^\/]+$/.test(path)) path = path + '/index.html';
+    return path;
+  }
+  const SELF_PATH = selfPath();
+
+  function isHidden(path){
+    return path.split('/').some(function(seg){ return seg.indexOf('.') === 0; });
+  }
 
   let TOKEN = localStorage.getItem('host_token') || '';
-  let FILES = [];
+  let DEFAULT_BRANCH = '';
+  let FILES = [];       // { name, dir, topDir, path, sha, size, download_url }
+  let SECTIONS = [];    // distinct top-level folders found at repo root
   let FILTER = 'all';
 
   const IMAGE_EXT = new Set(['png','jpg','jpeg','gif','webp','svg','bmp','ico','avif']);
   const AUDIO_EXT = new Set(['mp3','wav','ogg','flac','m4a','aac','wma','opus']);
+  const TEXT_EXT = new Set(['txt','md','markdown','json','js','ts','jsx','tsx','css','html','htm','xml','yml','yaml','csv','log','ini','cfg','conf','sh','py','java','c','cpp','h','rb','go','rs','php','sql','env']);
 
   function ext(name){
     const i = name.lastIndexOf('.');
@@ -467,25 +545,39 @@
     const e = ext(name);
     if (IMAGE_EXT.has(e)) return 'image';
     if (AUDIO_EXT.has(e)) return 'audio';
+    if (TEXT_EXT.has(e)) return 'text';
     return 'other';
   }
 
+  function encodePathForUrl(path){
+    return path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  function splitPath(path){
+    const idx = path.lastIndexOf('/');
+    const name = idx > -1 ? path.slice(idx + 1) : path;
+    const dir = idx > -1 ? path.slice(0, idx) : '';
+    const topDir = dir ? dir.split('/')[0] : '';
+    return { name: name, dir: dir, topDir: topDir };
+  }
+
   /* ---------- dom refs ---------- */
-  const loginView   = document.getElementById('login-view');
-  const appView     = document.getElementById('app-view');
-  const tokenInput  = document.getElementById('token-input');
-  const toggleToken = document.getElementById('toggle-token');
-  const enterBtn    = document.getElementById('enter-btn');
-  const loginError  = document.getElementById('login-error');
-  const logoutBtn   = document.getElementById('logout-btn');
-  const dropzone    = document.getElementById('dropzone');
-  const pickBtn     = document.getElementById('pick-btn');
-  const fileInput   = document.getElementById('file-input');
-  const statusLine  = document.getElementById('status-line');
-  const manifestWrap  = document.getElementById('manifest-wrap');
-  const tabsEl      = document.getElementById('tabs');
-  const refreshBtn  = document.getElementById('refresh-btn');
-  const toastStack  = document.getElementById('toast-stack');
+  const loginView    = document.getElementById('login-view');
+  const appView      = document.getElementById('app-view');
+  const tokenInput   = document.getElementById('token-input');
+  const toggleToken  = document.getElementById('toggle-token');
+  const enterBtn     = document.getElementById('enter-btn');
+  const loginError   = document.getElementById('login-error');
+  const logoutBtn    = document.getElementById('logout-btn');
+  const dropzone     = document.getElementById('dropzone');
+  const dropzoneHint = document.getElementById('dropzone-hint');
+  const pickBtn      = document.getElementById('pick-btn');
+  const fileInput    = document.getElementById('file-input');
+  const statusLine   = document.getElementById('status-line');
+  const manifestWrap = document.getElementById('manifest-wrap');
+  const tabsEl       = document.getElementById('tabs');
+  const refreshBtn   = document.getElementById('refresh-btn');
+  const toastStack   = document.getElementById('toast-stack');
 
 
   /* ---------- toast ---------- */
@@ -514,14 +606,28 @@
     return fetch(API + path, Object.assign({}, opts, { headers }));
   }
 
-  function contentsUrl(name){
-    return '/repos/' + REPO.owner + '/' + REPO.repo + '/contents/sources/' + encodeURIComponent(name);
+  function contentsApiPath(fullPath){
+    return '/repos/' + REPO.owner + '/' + REPO.repo + '/contents/' + encodePathForUrl(fullPath);
   }
 
   /* ---------- auth flow ---------- */
-  async function verifyToken(t){
+  async function verifyToken(){
     const res = await gh('/repos/' + REPO.owner + '/' + REPO.repo, {});
-    return res.ok;
+    if (res.ok){
+      try{
+        const data = await res.json();
+        if (data && data.default_branch) DEFAULT_BRANCH = data.default_branch;
+      }catch(e){}
+      return true;
+    }
+    return false;
+  }
+
+  async function ensureDefaultBranch(){
+    if (DEFAULT_BRANCH) return DEFAULT_BRANCH;
+    const ok = await verifyToken();
+    if (!ok || !DEFAULT_BRANCH) throw new Error('no-default-branch');
+    return DEFAULT_BRANCH;
   }
 
   async function login(){
@@ -529,10 +635,10 @@
     if (!t) return;
     TOKEN = t;
     enterBtn.disabled = true;
-    enterBtn.textContent = 'Пришвартовываемся…';
+    enterBtn.textContent = 'Подключаемся…';
     loginError.classList.remove('show');
     try{
-      const ok = await verifyToken(t);
+      const ok = await verifyToken();
       if (!ok) throw new Error('bad-auth');
       localStorage.setItem('host_token', TOKEN);
       showApp();
@@ -548,8 +654,11 @@
 
   function logout(){
     TOKEN = '';
+    DEFAULT_BRANCH = '';
     localStorage.removeItem('host_token');
     FILES = [];
+    SECTIONS = [];
+    FILTER = 'all';
     appView.classList.remove('visible');
     loginView.classList.remove('hidden');
     tokenInput.value = '';
@@ -562,35 +671,82 @@
 
   /* ---------- manifest ---------- */
   async function loadManifest(){
-    setStatus('Сверяем груз…');
+    setStatus('Загружаем список…');
     try{
-      const res = await gh('/repos/' + REPO.owner + '/' + REPO.repo + '/contents/sources', {});
-      if (res.status === 404){
-        FILES = [];
-      } else if (res.ok){
-        const data = await res.json();
-        FILES = (Array.isArray(data) ? data : [])
-          .filter(function(i){ return i.type === 'file'; })
-          .map(function(i){ return { name:i.name, path:i.path, sha:i.sha, size:i.size, download_url:i.download_url }; })
-          .sort(function(a,b){ return a.name.localeCompare(b.name); });
-      } else {
-        throw new Error('list-failed');
-      }
+      const branch = await ensureDefaultBranch();
+      const res = await gh('/repos/' + REPO.owner + '/' + REPO.repo + '/git/trees/' + encodeURIComponent(branch) + '?recursive=1', {});
+      if (!res.ok) throw new Error('tree-failed');
+      const data = await res.json();
+      const entries = Array.isArray(data.tree) ? data.tree : [];
+
+      FILES = entries
+        .filter(function(e){ return e.type === 'blob' && e.path !== SELF_PATH && !isHidden(e.path); })
+        .map(function(e){
+          const p = splitPath(e.path);
+          return {
+            name: p.name,
+            dir: p.dir,
+            topDir: p.topDir,
+            path: e.path,
+            sha: e.sha,
+            size: e.size,
+            download_url: 'https://raw.githubusercontent.com/' + REPO.owner + '/' + REPO.repo + '/' + branch + '/' + encodePathForUrl(e.path)
+          };
+        })
+        .sort(function(a,b){
+          if (a.dir !== b.dir) return a.dir.localeCompare(b.dir);
+          return a.name.localeCompare(b.name);
+        });
+
+      computeSections();
       render();
     }catch(e){
-      toast('Не удалось прочитать трюм.', true);
+      toast('Не удалось загрузить список файлов.', true);
     }finally{
       setStatus('');
     }
   }
 
-  function pageUrl(name){
-    return 'https://' + REPO.owner + '.github.io/' + REPO.repo + '/sources/' + encodeURIComponent(name);
+  function computeSections(){
+    const set = new Set();
+    FILES.forEach(function(f){ set.add(f.topDir); });
+    SECTIONS = Array.from(set).sort(function(a,b){
+      if (a === b) return 0;
+      if (a === '') return -1;
+      if (b === '') return 1;
+      return a.localeCompare(b);
+    });
+    if (FILTER !== 'all' && SECTIONS.indexOf(FILTER) === -1) FILTER = 'all';
+    renderTabs();
+    updateDropHint();
   }
 
-  async function copyName(name){
+  function renderTabs(){
+    let html = '<button data-filter="all" class="' + (FILTER === 'all' ? 'active' : '') + '">все</button>';
+    SECTIONS.forEach(function(s){
+      const label = s === '' ? 'без раздела' : s;
+      html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(label) + '</button>';
+    });
+    tabsEl.innerHTML = html;
+  }
+
+  function updateDropHint(){
+    if (FILTER === 'all'){
+      dropzoneHint.textContent = 'перетащить файлы или';
+    } else if (FILTER === ''){
+      dropzoneHint.textContent = 'файлы попадут в корень репозитория — перетащить или';
+    } else {
+      dropzoneHint.textContent = 'файлы попадут в «' + FILTER + '» — перетащить или';
+    }
+  }
+
+  function pageUrl(path){
+    return 'https://' + REPO.owner + '.github.io/' + (IS_USER_SITE ? '' : REPO.repo + '/') + encodePathForUrl(path);
+  }
+
+  async function copyName(path){
     try{
-      await navigator.clipboard.writeText(pageUrl(name));
+      await navigator.clipboard.writeText(pageUrl(path));
       toast('Ссылка скопирована.');
     }catch(e){
       toast('Не удалось скопировать.', true);
@@ -599,50 +755,52 @@
 
   /* ---------- render ---------- */
   function render(){
-    const visible = FILTER === 'all' ? FILES : FILES.filter(function(f){ return category(f.name) === FILTER; });
+    const visible = FILTER === 'all' ? FILES : FILES.filter(function(f){ return f.topDir === FILTER; });
 
     if (FILES.length === 0){
-      manifestWrap.innerHTML = '<div class="empty">Трюм пуст. Пора обзавестись добычей.</div>';
+      manifestWrap.innerHTML = '<div class="empty">Пока пусто. Добавь первый файл.</div>';
       return;
     }
     if (visible.length === 0){
-      manifestWrap.innerHTML = '<div class="empty">Ничего подходящего в трюме.</div>';
+      manifestWrap.innerHTML = '<div class="empty">Ничего подходящего не найдено.</div>';
       return;
     }
 
-    let rows = '';
+    let cards = '';
     visible.forEach(function(f){
       const cat = category(f.name);
       let thumb;
       if (cat === 'image'){
-        thumb = '<div class="thumb is-image" data-act="preview" data-url="' + f.download_url + '"><img src="' + f.download_url + '" loading="lazy" alt=""></div>';
+        thumb = '<div class="card-thumb is-image" data-act="preview" data-url="' + f.download_url + '"><img src="' + f.download_url + '" loading="lazy" alt=""></div>';
       } else if (cat === 'audio'){
-        thumb = '<div class="thumb glyph">♪</div>';
+        thumb = '<div class="card-thumb glyph">♪</div>';
+      } else if (cat === 'text'){
+        thumb = '<div class="card-thumb is-text glyph" data-act="preview-text" data-url="' + f.download_url + '" data-name="' + escapeAttr(f.name) + '">▤</div>';
       } else {
-        thumb = '<div class="thumb glyph">▤</div>';
+        thumb = '<div class="card-thumb glyph">▤</div>';
       }
 
-      rows += '' +
-        '<tr data-name="' + escapeAttr(f.name) + '">' +
-          '<td class="col-thumb">' + thumb + '</td>' +
-          '<td class="col-name">' +
-            (cat === 'audio'
-              ? ('<div class="fname" data-act="copy">' + escapeHtml(f.name) + '</div>' +
-                 '<div class="audio-cell"><audio controls preload="none" src="' + f.download_url + '"></audio></div>')
-              : ('<span class="fname" data-act="copy">' + escapeHtml(f.name) + '</span>')
-            ) +
-          '</td>' +
-          '<td class="col-actions">' +
+      const audioRow = cat === 'audio'
+        ? ('<div class="card-audio"><audio controls preload="none" src="' + f.download_url + '"></audio></div>')
+        : '';
+
+      const showDirTag = f.dir && (FILTER === 'all' || f.dir !== FILTER);
+      const dirTag = showDirTag ? ('<div class="card-dir">' + escapeHtml(f.dir) + '</div>') : '';
+
+      cards += '' +
+        '<div class="card" data-path="' + escapeAttr(f.path) + '">' +
+          thumb +
+          '<div class="card-name" data-act="copy">' + escapeHtml(f.name) + '</div>' +
+          dirTag +
+          audioRow +
+          '<div class="card-actions">' +
             '<span class="icon-btn" data-act="rename" title="переименовать">✎</span>' +
-            '<span class="icon-btn" data-act="delete" title="выбросить">✕</span>' +
-          '</td>' +
-        '</tr>';
+            '<span class="icon-btn" data-act="delete" title="удалить">✕</span>' +
+          '</div>' +
+        '</div>';
     });
 
-    manifestWrap.innerHTML =
-      '<table class="ledger"><thead><tr>' +
-        '<th class="col-thumb"></th><th>имя</th><th class="col-actions"></th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
+    manifestWrap.innerHTML = '<div class="grid">' + cards + '</div>';
   }
 
   function escapeHtml(s){
@@ -660,11 +818,15 @@
       openLightbox(target.getAttribute('data-url'));
       return;
     }
-    const row = target.closest('tr');
-    const name = row.getAttribute('data-name');
-    if (act === 'copy') copyName(name);
-    if (act === 'delete') deleteFile(name);
-    if (act === 'rename') startRename(row, name);
+    if (act === 'preview-text'){
+      openTextViewer(target.getAttribute('data-url'), target.getAttribute('data-name'));
+      return;
+    }
+    const card = target.closest('.card');
+    const path = card.getAttribute('data-path');
+    if (act === 'copy') copyName(path);
+    if (act === 'delete') deleteFile(path);
+    if (act === 'rename') startRename(card, path);
   });
 
   const lightbox = document.getElementById('lightbox');
@@ -680,8 +842,36 @@
   lightbox.addEventListener('click', function(e){
     if (e.target === lightbox) closeLightbox();
   });
+
+  const textViewer = document.getElementById('text-viewer');
+  const textViewerName = document.getElementById('text-viewer-name');
+  const textViewerBody = document.getElementById('text-viewer-body');
+  const textViewerClose = document.getElementById('text-viewer-close');
+
+  async function openTextViewer(url, name){
+    textViewerName.textContent = name || '';
+    textViewerBody.textContent = 'Загружаем…';
+    textViewer.classList.add('show');
+    try{
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('fetch-failed');
+      const text = await res.text();
+      textViewerBody.textContent = text;
+    }catch(e){
+      textViewerBody.textContent = 'Не удалось загрузить содержимое файла.';
+    }
+  }
+  function closeTextViewer(){
+    textViewer.classList.remove('show');
+    textViewerBody.textContent = '';
+  }
+  textViewer.addEventListener('click', function(e){
+    if (e.target === textViewer) closeTextViewer();
+  });
+  textViewerClose.addEventListener('click', closeTextViewer);
+
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'Escape'){ closeLightbox(); closeTextViewer(); }
   });
 
   tabsEl.addEventListener('click', function(e){
@@ -689,19 +879,21 @@
     if (!btn) return;
     FILTER = btn.getAttribute('data-filter');
     Array.from(tabsEl.querySelectorAll('button')).forEach(function(b){ b.classList.toggle('active', b === btn); });
+    updateDropHint();
     render();
   });
 
   refreshBtn.addEventListener('click', loadManifest);
 
   /* ---------- rename ---------- */
-  function startRename(row, oldName){
-    const cell = row.querySelector('.col-name');
-    const current = cell.querySelector('.fname');
+  function startRename(card, path){
+    const f = FILES.find(function(x){ return x.path === path; });
+    if (!f) return;
+    const current = card.querySelector('.card-name');
     if (!current) return;
     const input = document.createElement('input');
     input.className = 'rename-input';
-    input.value = oldName;
+    input.value = f.name;
     current.replaceWith(input);
     input.focus();
     input.select();
@@ -710,7 +902,7 @@
     function commit(){
       if (done) return; done = true;
       const val = input.value.trim();
-      if (val && val !== oldName) renameFile(oldName, val);
+      if (val && val !== f.name) renameFile(path, val);
       else render();
     }
     input.addEventListener('keydown', function(e){
@@ -725,7 +917,7 @@
   }
 
   async function getFileContent(path, sha){
-    const res = await gh('/repos/' + REPO.owner + '/' + REPO.repo + '/contents/' + path, {});
+    const res = await gh(contentsApiPath(path), {});
     if (res.ok){
       const data = await res.json();
       if (data.content) return data.content.replace(/\n/g, '');
@@ -736,30 +928,33 @@
     return blob.content.replace(/\n/g, '');
   }
 
-  async function renameFile(oldName, newNameRaw){
+  async function renameFile(oldPath, newNameRaw){
     const newName = sanitizeName(newNameRaw);
-    if (!newName || newName === oldName){ render(); return; }
-    const old = FILES.find(function(f){ return f.name === oldName; });
+    const old = FILES.find(function(f){ return f.path === oldPath; });
     if (!old) return;
+    if (!newName || newName === old.name){ render(); return; }
 
-    setStatus('Переносим груз…');
+    const newPath = (old.dir ? old.dir + '/' : '') + newName;
+    if (newPath === oldPath){ render(); return; }
+
+    setStatus('Переименовываем…');
     try{
-      const content = await getFileContent(old.path, old.sha);
-      const target = FILES.find(function(f){ return f.name === newName; });
-      const putBody = { message: 'переименовано: ' + oldName + ' \u2192 ' + newName, content: content };
+      const content = await getFileContent(oldPath, old.sha);
+      const target = FILES.find(function(f){ return f.path === newPath; });
+      const putBody = { message: 'переименовано: ' + oldPath + ' \u2192 ' + newPath, content: content };
       if (target) putBody.sha = target.sha;
 
-      const putRes = await gh(contentsUrl(newName), {
+      const putRes = await gh(contentsApiPath(newPath), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(putBody)
       });
       if (!putRes.ok) throw new Error('rename-create-failed');
 
-      const delRes = await gh(contentsUrl(oldName), {
+      const delRes = await gh(contentsApiPath(oldPath), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'удалено старое имя: ' + oldName, sha: old.sha })
+        body: JSON.stringify({ message: 'удалено старое имя: ' + oldPath, sha: old.sha })
       });
       if (!delRes.ok) throw new Error('rename-delete-failed');
 
@@ -774,22 +969,22 @@
   }
 
   /* ---------- delete ---------- */
-  async function deleteFile(name){
-    const f = FILES.find(function(x){ return x.name === name; });
+  async function deleteFile(path){
+    const f = FILES.find(function(x){ return x.path === path; });
     if (!f) return;
-    if (!confirm('Выбросить «' + name + '» за борт?')) return;
-    setStatus('Выбрасываем за борт…');
+    if (!confirm('Удалить «' + f.name + '»?')) return;
+    setStatus('Удаляем…');
     try{
-      const res = await gh(contentsUrl(name), {
+      const res = await gh(contentsApiPath(path), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'удалено: ' + name, sha: f.sha })
+        body: JSON.stringify({ message: 'удалено: ' + path, sha: f.sha })
       });
       if (!res.ok) throw new Error('delete-failed');
       await loadManifest();
-      toast('Выброшено за борт.');
+      toast('Удалено.');
     }catch(e){
-      toast('Не вышло выбросить файл.', true);
+      toast('Не вышло удалить файл.', true);
     }finally{
       setStatus('');
     }
@@ -807,28 +1002,30 @@
     return btoa(binary);
   }
 
-  async function uploadOne(file){
+  async function uploadOne(file, targetDir){
     const name = sanitizeName(file.name);
+    const fullPath = (targetDir ? targetDir + '/' : '') + name;
     const content = await readBase64(file);
-    const existing = FILES.find(function(f){ return f.name === name; });
-    const body = { message: 'добавлено: ' + name, content: content };
+    const existing = FILES.find(function(f){ return f.path === fullPath; });
+    const body = { message: 'добавлено: ' + fullPath, content: content };
     if (existing) body.sha = existing.sha;
-    const res = await gh(contentsUrl(name), {
+    const res = await gh(contentsApiPath(fullPath), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error('upload-failed: ' + name);
+    if (!res.ok) throw new Error('upload-failed: ' + fullPath);
   }
 
   async function uploadFiles(fileList){
     const files = Array.from(fileList);
     if (!files.length) return;
+    const targetDir = FILTER === 'all' ? '' : FILTER;
     let okCount = 0;
     for (let i=0; i<files.length; i++){
-      setStatus('Груз поднимается на борт… (' + (i+1) + '/' + files.length + ')');
+      setStatus('Загружаем файлы… (' + (i+1) + '/' + files.length + ')');
       try{
-        await uploadOne(files[i]);
+        await uploadOne(files[i], targetDir);
         okCount++;
       }catch(e){
         toast('Не вышло загрузить «' + files[i].name + '».', true);
@@ -836,7 +1033,7 @@
     }
     setStatus('');
     await loadManifest();
-    if (okCount) toast(okCount > 1 ? 'Груз закреплён (' + okCount + ').' : 'Груз закреплён.');
+    if (okCount) toast(okCount > 1 ? 'Файлы загружены (' + okCount + ').' : 'Файл загружен.');
   }
 
   pickBtn.addEventListener('click', function(){ fileInput.click(); });
@@ -874,7 +1071,7 @@
     if (TOKEN){
       showApp();
       try{
-        const ok = await verifyToken(TOKEN);
+        const ok = await verifyToken();
         if (!ok) throw new Error('stale-token');
         await loadManifest();
       }catch(e){
