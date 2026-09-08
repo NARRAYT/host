@@ -129,8 +129,6 @@
   }
   .token-row button:hover{ color:var(--bone); }
 
-  .hint{ font-size:11px; color:var(--ash); margin:0 0 22px; line-height:1.5; }
-
   .btn-primary{
     display:block;
     width:100%;
@@ -176,13 +174,6 @@
     font-size:20px;
     letter-spacing:1.5px;
   }
-
-  .topbar .repo{
-    font-size:12px;
-    color:var(--ash);
-  }
-
-  .topbar .repo b{ color:var(--bone); font-weight:400; }
 
   .logout{
     font-size:12px;
@@ -240,8 +231,6 @@
     letter-spacing:0.5px;
   }
 
-  .manifest-head h2 span{ color:var(--ash); }
-
   .tabs{ display:flex; gap:2px; }
   .tabs button{
     font-size:12px;
@@ -286,7 +275,6 @@
     vertical-align:middle;
   }
 
-  .col-n{ color:var(--ash); width:34px; }
   .col-thumb{ width:44px; }
 
   .thumb{
@@ -325,8 +313,6 @@
     word-break:break-all;
   }
   .fname:hover{ border-bottom-color:var(--bone); }
-
-  .col-type{ color:var(--ash); width:90px; }
 
   .col-actions{ width:64px; text-align:right; white-space:nowrap; }
   .icon-btn{
@@ -393,7 +379,6 @@
     table.ledger tr{ padding:10px 0; }
     table.ledger td{ padding:2px 0; border:none; }
     .col-thumb{ float:left; margin-right:10px; }
-    .col-n{ display:none; }
     .col-actions{ text-align:left; margin-top:6px; }
     .audio-cell audio{ width:100%; }
   }
@@ -410,14 +395,14 @@
   <div class="poster">
     <div class="skull glyph">☠</div>
     <h1>HOST</h1>
-    <p class="tagline">цифровой трюм для картинок,<br>музыки и прочей добычи</p>
+    <p class="tagline">хост-трюм</p>
 
     <label class="field-label" for="token-input">Токен доступа</label>
     <div class="token-row">
       <input id="token-input" type="password" placeholder="ghp_&hellip;" autocomplete="off" spellcheck="false">
       <button id="toggle-token" type="button" title="показать/скрыть">•••</button>
     </div>
-    <button id="enter-btn" class="btn-primary" style="margin-top:22px;">Отпереть трюм</button>
+    <button id="enter-btn" class="btn-primary" style="margin-top:22px;">Войти</button>
     <div id="login-error" class="login-error">Не вышло. Проверь токен и доступ к репозиторию.</div>
   </div>
 </div>
@@ -430,14 +415,14 @@
   </div>
 
   <div class="dropzone" id="dropzone">
-    <p>перетащи файлы сюда, или</p>
+    <p>перетащить контент или</p>
     <button class="btn-outline" id="pick-btn" type="button">выбрать файлы</button>
     <input type="file" id="file-input" multiple style="display:none">
     <div class="status-line" id="status-line"></div>
   </div>
 
   <div class="manifest-head">
-    <h2>Манифест <span id="manifest-count">(0)</span></h2>
+    <h2>Контент</h2>
     <div class="tabs" id="tabs">
       <button data-filter="all" class="active">все</button>
       <button data-filter="image">картинки</button>
@@ -485,9 +470,6 @@
     if (AUDIO_EXT.has(e)) return 'audio';
     return 'other';
   }
-  function categoryLabel(cat){
-    return cat === 'image' ? 'картинка' : cat === 'audio' ? 'музыка' : 'файл';
-  }
 
   /* ---------- dom refs ---------- */
   const loginView   = document.getElementById('login-view');
@@ -502,7 +484,6 @@
   const fileInput   = document.getElementById('file-input');
   const statusLine  = document.getElementById('status-line');
   const manifestWrap  = document.getElementById('manifest-wrap');
-  const manifestCount = document.getElementById('manifest-count');
   const tabsEl      = document.getElementById('tabs');
   const refreshBtn  = document.getElementById('refresh-btn');
   const toastStack  = document.getElementById('toast-stack');
@@ -562,7 +543,7 @@
       loginError.classList.add('show');
     }finally{
       enterBtn.disabled = false;
-      enterBtn.textContent = 'Отпереть трюм';
+      enterBtn.textContent = 'Войти';
     }
   }
 
@@ -598,7 +579,7 @@
       }
       render();
     }catch(e){
-      toast('Не удалось прочитать трюм.', true);
+      toast('Не удалось подключиться.', true);
     }finally{
       setStatus('');
     }
@@ -619,21 +600,19 @@
 
   /* ---------- render ---------- */
   function render(){
-    manifestCount.textContent = '(' + FILES.length + ')';
-
     const visible = FILTER === 'all' ? FILES : FILES.filter(function(f){ return category(f.name) === FILTER; });
 
     if (FILES.length === 0){
-      manifestWrap.innerHTML = '<div class="empty">Трюм пуст. Пора обзавестись добычей.</div>';
+      manifestWrap.innerHTML = '<div class="empty">Трюм пуст.</div>';
       return;
     }
     if (visible.length === 0){
-      manifestWrap.innerHTML = '<div class="empty">Ничего подходящего в трюме.</div>';
+      manifestWrap.innerHTML = '<div class="empty">Ничего подходящего.</div>';
       return;
     }
 
     let rows = '';
-    visible.forEach(function(f, idx){
+    visible.forEach(function(f){
       const cat = category(f.name);
       let thumb;
       if (cat === 'image'){
@@ -644,11 +623,8 @@
         thumb = '<div class="thumb glyph">▤</div>';
       }
 
-      const num = String(idx+1).padStart(2,'0');
-
       rows += '' +
         '<tr data-name="' + escapeAttr(f.name) + '">' +
-          '<td class="col-n">' + num + '</td>' +
           '<td class="col-thumb">' + thumb + '</td>' +
           '<td class="col-name">' +
             (cat === 'audio'
@@ -657,7 +633,6 @@
               : ('<span class="fname" data-act="copy">' + escapeHtml(f.name) + '</span>')
             ) +
           '</td>' +
-          '<td class="col-type">' + categoryLabel(cat) + '</td>' +
           '<td class="col-actions">' +
             '<span class="icon-btn" data-act="rename" title="переименовать">✎</span>' +
             '<span class="icon-btn" data-act="delete" title="выбросить">✕</span>' +
@@ -667,7 +642,7 @@
 
     manifestWrap.innerHTML =
       '<table class="ledger"><thead><tr>' +
-        '<th class="col-n">№</th><th class="col-thumb"></th><th>имя</th><th class="col-type">тип</th><th class="col-actions"></th>' +
+        '<th class="col-thumb"></th><th>имя</th><th class="col-actions"></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
