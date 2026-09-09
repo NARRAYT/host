@@ -522,13 +522,12 @@
     <p class="types-hint">разрешены: изображения, аудио, а также txt / md / csv / json / log / pdf</p>
 
     <div class="folder-select-row">
-      <label class="field-label" for="folder-select" style="margin:0;">папка назначения:</label>
+      <label class="field-label" for="folder-select" style="margin:0;">Загрузить в:</label>
       <select id="folder-select"></select>
     </div>
     <div class="folder-new-row" id="folder-new-row">
       <input type="text" id="folder-new-input" placeholder="new-folder-name" autocomplete="off" spellcheck="false">
       <button class="btn-outline" id="folder-new-confirm" type="button">создать</button>
-      <button class="btn-outline" id="folder-new-cancel" type="button">отмена</button>
     </div>
 
     <button class="btn-outline" id="pick-btn" type="button">выбрать файлы</button>
@@ -660,7 +659,6 @@
   const folderNewRow     = document.getElementById('folder-new-row');
   const folderNewInput   = document.getElementById('folder-new-input');
   const folderNewConfirm = document.getElementById('folder-new-confirm');
-  const folderNewCancel  = document.getElementById('folder-new-cancel');
   const pickBtn      = document.getElementById('pick-btn');
   const fileInput    = document.getElementById('file-input');
   const statusLine   = document.getElementById('status-line');
@@ -821,14 +819,6 @@
       html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(label) + '</button>';
     });
     tabsEl.innerHTML = html;
-  }
-
-  function updateDropHint(){
-    if (UPLOAD_DIR === ''){
-      dropzoneHint.textContent = 'файлы попадут в корень репозитория — перетащить или';
-    } else {
-      dropzoneHint.textContent = 'файлы попадут в «' + UPLOAD_DIR + '» — перетащить или';
-    }
   }
 
   function renderFolderSelect(){
@@ -1031,10 +1021,6 @@
     if (e.key === 'Enter') confirmNewFolder();
     if (e.key === 'Escape'){ folderNewRow.classList.remove('show'); renderFolderSelect(); }
   });
-  folderNewCancel.addEventListener('click', function(){
-    folderNewRow.classList.remove('show');
-    renderFolderSelect();
-  });
 
   /* ---------- rename ---------- */
   function startRename(card, path){
@@ -1173,10 +1159,6 @@
     if (!all.length) return;
 
     const files = all.filter(function(f){ return isUploadAllowed(f.name); });
-    const rejected = all.filter(function(f){ return !isUploadAllowed(f.name); });
-    if (rejected.length){
-      toast('Не поддерживается (' + rejected.map(function(f){ return f.name; }).join(', ') + '). Разрешены только изображения, аудио и txt/md/csv/json/log/pdf.', true);
-    }
     if (!files.length) return;
 
     const targetDir = UPLOAD_DIR;
