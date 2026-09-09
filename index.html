@@ -814,7 +814,7 @@
     const combined = SECTIONS.concat(PENDING_DIRS.filter(function(d){ return SECTIONS.indexOf(d) === -1; }));
     let html = '<button data-filter="all" class="' + (FILTER === 'all' ? 'active' : '') + '">все</button>';
     combined.forEach(function(s){
-      const label = s === '' ? 'без раздела' : s;
+      const label = s === '' ? 'корень' : s;
       html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(label) + '</button>';
     });
     tabsEl.innerHTML = html;
