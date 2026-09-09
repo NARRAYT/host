@@ -831,10 +831,10 @@
 
     let html = '';
     combined.forEach(function(s){
-      const label = s === '' ? '(корень репозитория)' : s;
+      const label = s === '' ? 'корень (ненадо)' : s;
       html += '<option value="' + escapeAttr(s) + '"' + (s === UPLOAD_DIR ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
     });
-    html += '<option value="__new__">+ новая папка (латиницей)…</option>';
+    html += '<option value="__new__">+ новая папка</option>';
     folderSelect.innerHTML = html;
     updateDropHint();
   }
