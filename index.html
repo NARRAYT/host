@@ -839,6 +839,23 @@
     updateDropHint();
   }
 
+  // FIX: this function was called from renderFolderSelect() above but was
+  // never defined anywhere in the original script. That caused a
+  // ReferenceError every time renderFolderSelect() ran (including the very
+  // first call, from computeSections() inside loadManifest()). Because that
+  // error was thrown inside loadManifest()'s try block, it got swallowed by
+  // its catch and surfaced as the misleading "Не удалось загрузить список
+  // файлов" toast — even though FILES had already been fetched correctly.
+  // Switching tabs afterwards called render() directly (not
+  // computeSections()/renderFolderSelect()), so it never hit the missing
+  // function and the already-loaded files simply appeared.
+  // This is the minimal fix: a safe no-op so nothing throws. There is no
+  // #dropzone-hint element in the markup, so this intentionally does nothing
+  // visible yet.
+  function updateDropHint(){
+    if (!dropzoneHint) return;
+  }
+
   function pageUrl(path){
     return 'https://' + REPO.owner + '.github.io/' + (IS_USER_SITE ? '' : REPO.repo + '/') + encodePathForUrl(path);
   }
