@@ -585,9 +585,9 @@
   let TOKEN = localStorage.getItem('host_token') || '';
   let DEFAULT_BRANCH = '';
   let FILES = [];       // { name, dir, topDir, path, sha, size, download_url }
-  let SECTIONS = [];    // distinct top-level folders found at repo root
+  let SECTIONS = [];    // distinct top-level folders found at repo root (root itself is never included)
   let FILTER = 'all';
-  let UPLOAD_DIR = '';     // folder new uploads go into ('' = repo root)
+  let UPLOAD_DIR = '';     // folder new uploads go into ('' means "no folder chosen yet" — uploads are blocked)
   let PENDING_DIRS = [];   // folders picked/created by the user that don't have a file in them yet
   let DRAFT_DIR = null;    // folder name currently being typed in the "new folder" input (not yet confirmed)
 
@@ -795,14 +795,12 @@
   }
 
   function computeSections(){
+    // Root ('') is intentionally never added to SECTIONS: it must not show up
+    // as a tab, and it must not be selectable as an upload target.
     const set = new Set();
-    FILES.forEach(function(f){ set.add(f.topDir); });
-    SECTIONS = Array.from(set).sort(function(a,b){
-      if (a === b) return 0;
-      if (a === '') return -1;
-      if (b === '') return 1;
-      return a.localeCompare(b);
-    });
+    FILES.forEach(function(f){ if (f.topDir !== '') set.add(f.topDir); });
+    SECTIONS = Array.from(set).sort(function(a,b){ return a.localeCompare(b); });
+
     if (FILTER !== 'all' && SECTIONS.indexOf(FILTER) === -1 && PENDING_DIRS.indexOf(FILTER) === -1) FILTER = 'all';
     PENDING_DIRS = PENDING_DIRS.filter(function(d){ return SECTIONS.indexOf(d) === -1; });
     if (DRAFT_DIR && SECTIONS.indexOf(DRAFT_DIR) !== -1) DRAFT_DIR = null;
@@ -814,26 +812,25 @@
     const combined = SECTIONS.concat(PENDING_DIRS.filter(function(d){ return SECTIONS.indexOf(d) === -1; }));
     let html = '<button data-filter="all" class="' + (FILTER === 'all' ? 'active' : '') + '">все</button>';
     combined.forEach(function(s){
-      const label = s === '' ? 'корень' : s;
-      html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(label) + '</button>';
+      html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(s) + '</button>';
     });
     tabsEl.innerHTML = html;
   }
 
   function renderFolderSelect(){
-    const combined = Array.from(new Set([''].concat(SECTIONS, PENDING_DIRS)));
-    combined.sort(function(a,b){
-      if (a === b) return 0;
-      if (a === '') return -1;
-      if (b === '') return 1;
-      return a.localeCompare(b);
-    });
-    if (combined.indexOf(UPLOAD_DIR) === -1) UPLOAD_DIR = '';
+    // Root is deliberately excluded here too — there is no "" option, so the
+    // dropzone can never target the repo root. If there isn't a folder yet,
+    // the only option is to create one.
+    const combined = Array.from(new Set(SECTIONS.concat(PENDING_DIRS)));
+    combined.sort(function(a,b){ return a.localeCompare(b); });
+    if (combined.indexOf(UPLOAD_DIR) === -1) UPLOAD_DIR = combined.length ? combined[0] : '';
 
     let html = '';
+    if (!combined.length){
+      html += '<option value="">— сначала создайте папку —</option>';
+    }
     combined.forEach(function(s){
-      const label = s === '' ? 'корень (ненадо)' : s;
-      html += '<option value="' + escapeAttr(s) + '"' + (s === UPLOAD_DIR ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      html += '<option value="' + escapeAttr(s) + '"' + (s === UPLOAD_DIR ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
     });
     html += '<option value="__new__">+ новая папка</option>';
     folderSelect.innerHTML = html;
@@ -1058,7 +1055,8 @@
 
   function cancelNewFolder(){
     setDraftFolder(null);
-    UPLOAD_DIR = '';
+    // Fall back to whatever real folder already exists, never to root.
+    UPLOAD_DIR = SECTIONS.length ? SECTIONS[0] : '';
     folderNewRow.classList.remove('show');
     renderTabs();
     renderFolderSelect();
@@ -1207,6 +1205,13 @@
     const all = Array.from(fileList);
     if (!all.length) return;
 
+    // Root is never a valid upload target — a folder must be selected
+    // (or created) first.
+    if (!UPLOAD_DIR){
+      toast('Сначала выберите или создайте папку — загрузка в корень отключена.', true);
+      return;
+    }
+
     const files = all.filter(function(f){ return isUploadAllowed(f.name); });
     if (!files.length) return;
 
@@ -1226,7 +1231,13 @@
     if (okCount) toast(okCount > 1 ? 'Файлы загружены (' + okCount + ').' : 'Файл загружен.');
   }
 
-  pickBtn.addEventListener('click', function(){ fileInput.click(); });
+  pickBtn.addEventListener('click', function(){
+    if (!UPLOAD_DIR){
+      toast('Сначала выберите или создайте папку — загрузка в корень отключена.', true);
+      return;
+    }
+    fileInput.click();
+  });
   fileInput.addEventListener('change', function(){
     uploadFiles(fileInput.files);
     fileInput.value = '';
