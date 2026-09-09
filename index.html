@@ -250,7 +250,6 @@
     letter-spacing:0.3px;
   }
   .folder-new-row input:focus{ outline:none; border-color:var(--blood); }
-  .folder-new-row .btn-outline{ padding:8px 12px; }
 
   .btn-outline{
     border:1px solid var(--iron);
@@ -525,7 +524,6 @@
     </div>
     <div class="folder-new-row" id="folder-new-row">
       <input type="text" id="folder-new-input" placeholder="new-folder-name" autocomplete="off" spellcheck="false">
-      <button class="btn-outline" id="folder-new-confirm" type="button">создать</button>
     </div>
 
     <button class="btn-outline" id="pick-btn" type="button">выбрать файлы</button>
@@ -591,6 +589,7 @@
   let FILTER = 'all';
   let UPLOAD_DIR = '';     // folder new uploads go into ('' = repo root)
   let PENDING_DIRS = [];   // folders picked/created by the user that don't have a file in them yet
+  let DRAFT_DIR = null;    // folder name currently being typed in the "new folder" input (not yet confirmed)
 
   const IMAGE_EXT = new Set(['png','jpg','jpeg','gif','webp','svg','bmp','ico','avif']);
   const AUDIO_EXT = new Set(['mp3','wav','ogg','flac','m4a','aac','wma','opus']);
@@ -656,7 +655,6 @@
   const folderSelect     = document.getElementById('folder-select');
   const folderNewRow     = document.getElementById('folder-new-row');
   const folderNewInput   = document.getElementById('folder-new-input');
-  const folderNewConfirm = document.getElementById('folder-new-confirm');
   const pickBtn      = document.getElementById('pick-btn');
   const fileInput    = document.getElementById('file-input');
   const statusLine   = document.getElementById('status-line');
@@ -747,6 +745,7 @@
     FILTER = 'all';
     UPLOAD_DIR = '';
     PENDING_DIRS = [];
+    DRAFT_DIR = null;
     appView.classList.remove('visible');
     loginView.classList.remove('hidden');
     tokenInput.value = '';
@@ -804,15 +803,17 @@
       if (b === '') return 1;
       return a.localeCompare(b);
     });
-    if (FILTER !== 'all' && SECTIONS.indexOf(FILTER) === -1) FILTER = 'all';
+    if (FILTER !== 'all' && SECTIONS.indexOf(FILTER) === -1 && PENDING_DIRS.indexOf(FILTER) === -1) FILTER = 'all';
     PENDING_DIRS = PENDING_DIRS.filter(function(d){ return SECTIONS.indexOf(d) === -1; });
+    if (DRAFT_DIR && SECTIONS.indexOf(DRAFT_DIR) !== -1) DRAFT_DIR = null;
     renderTabs();
     renderFolderSelect();
   }
 
   function renderTabs(){
+    const combined = SECTIONS.concat(PENDING_DIRS.filter(function(d){ return SECTIONS.indexOf(d) === -1; }));
     let html = '<button data-filter="all" class="' + (FILTER === 'all' ? 'active' : '') + '">все</button>';
-    SECTIONS.forEach(function(s){
+    combined.forEach(function(s){
       const label = s === '' ? 'без раздела' : s;
       html += '<button data-filter="' + escapeAttr(s) + '" class="' + (FILTER === s ? 'active' : '') + '">' + escapeHtml(label) + '</button>';
     });
@@ -1014,27 +1015,60 @@
     updateDropHint();
   });
 
-  function confirmNewFolder(){
+  /* ---------- new-folder: type the name, nothing else needed ----------
+     Every keystroke updates PENDING_DIRS + UPLOAD_DIR + the folder tabs,
+     so the folder is already visible (as an empty tab and as the upload
+     target) before a single file has been picked. Enter / blur just closes
+     the little input row; Escape throws the draft away. */
+
+  function setDraftFolder(raw){
+    if (DRAFT_DIR && DRAFT_DIR !== raw){
+      const idx = PENDING_DIRS.indexOf(DRAFT_DIR);
+      if (idx > -1) PENDING_DIRS.splice(idx, 1);
+    }
+    DRAFT_DIR = raw || null;
+    if (raw && SECTIONS.indexOf(raw) === -1 && PENDING_DIRS.indexOf(raw) === -1){
+      PENDING_DIRS.push(raw);
+    }
+  }
+
+  function applyTypedFolder(){
     const raw = folderNewInput.value.trim();
-    if (!raw){
-      folderNewRow.classList.remove('show');
+    if (!raw || !isLatinFolderPath(raw)){
+      setDraftFolder(null);
+      renderTabs();
       renderFolderSelect();
       return;
     }
-    if (!isLatinFolderPath(raw)){
-      toast('Имя папки — только латинские буквы, цифры, «-» и «_» (без пробелов и кириллицы).', true);
-      return;
-    }
-    if (SECTIONS.indexOf(raw) === -1 && PENDING_DIRS.indexOf(raw) === -1) PENDING_DIRS.push(raw);
+    setDraftFolder(raw);
     UPLOAD_DIR = raw;
-    folderNewRow.classList.remove('show');
+    renderTabs();
     renderFolderSelect();
   }
 
-  folderNewConfirm.addEventListener('click', confirmNewFolder);
+  function finalizeNewFolder(){
+    const raw = folderNewInput.value.trim();
+    if (raw && !isLatinFolderPath(raw)){
+      toast('Имя папки — только латинские буквы, цифры, «-» и «_» (без пробелов и кириллицы).', true);
+      return;
+    }
+    applyTypedFolder();
+    folderNewRow.classList.remove('show');
+  }
+
+  function cancelNewFolder(){
+    setDraftFolder(null);
+    UPLOAD_DIR = '';
+    folderNewRow.classList.remove('show');
+    renderTabs();
+    renderFolderSelect();
+  }
+
+  folderNewInput.addEventListener('input', applyTypedFolder);
+  folderNewInput.addEventListener('blur', finalizeNewFolder);
   folderNewInput.addEventListener('keydown', function(e){
-    if (e.key === 'Enter') confirmNewFolder();
-    if (e.key === 'Escape'){ folderNewRow.classList.remove('show'); renderFolderSelect(); }
+    if (e.key === 'Enter'){ e.preventDefault(); finalizeNewFolder(); folderNewInput.blur(); }
+    if (e.key === 'Escape'){ cancelNewFolder(); }
   });
 
   /* ---------- rename ---------- */
